@@ -1,0 +1,922 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>时间序列分析 - 预测与异常检测</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            color: white;
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 2.5rem;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .main-card {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            padding: 30px;
+            margin-bottom: 30px;
+        }
+
+        .upload-section {
+            text-align: center;
+            padding: 40px;
+            border: 3px dashed #667eea;
+            border-radius: 15px;
+            margin-bottom: 30px;
+            background: #f8f9ff;
+        }
+
+        .upload-section.dragover {
+            background: #e8ebff;
+            border-color: #764ba2;
+        }
+
+        .upload-icon {
+            font-size: 48px;
+            margin-bottom: 15px;
+        }
+
+        .upload-text {
+            color: #666;
+            font-size: 16px;
+            margin-bottom: 20px;
+        }
+
+        #fileInput {
+            display: none;
+        }
+
+        .upload-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 12px 30px;
+            border: none;
+            border-radius: 25px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .upload-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.4);
+        }
+
+        .file-info {
+            margin-top: 15px;
+            padding: 10px;
+            background: #e8ebff;
+            border-radius: 8px;
+            display: none;
+        }
+
+        .file-info.show {
+            display: block;
+        }
+
+        .type-selector {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            margin-bottom: 30px;
+        }
+
+        .type-option {
+            flex: 1;
+            max-width: 250px;
+            padding: 20px;
+            border: 2px solid #e0e0e0;
+            border-radius: 15px;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-align: center;
+        }
+
+        .type-option:hover {
+            border-color: #667eea;
+            background: #f8f9ff;
+        }
+
+        .type-option.selected {
+            border-color: #667eea;
+            background: linear-gradient(135deg, #667eea15 0%, #764ba215 100%);
+        }
+
+        .type-option h3 {
+            color: #333;
+            margin-bottom: 8px;
+        }
+
+        .type-option p {
+            color: #666;
+            font-size: 14px;
+        }
+
+        .params-section {
+            display: none;
+        }
+
+        .params-section.show {
+            display: block;
+        }
+
+        .params-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .param-group {
+            padding: 15px;
+            background: #f8f9ff;
+            border-radius: 10px;
+        }
+
+        .param-group label {
+            display: block;
+            color: #333;
+            font-weight: 600;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+
+        .param-group input,
+        .param-group select {
+            width: 100%;
+            padding: 10px 15px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border-color 0.2s;
+        }
+
+        .param-group input:focus,
+        .param-group select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .param-group .hint {
+            font-size: 12px;
+            color: #888;
+            margin-top: 5px;
+        }
+
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .checkbox-group input[type="checkbox"] {
+            width: auto;
+        }
+
+        .analyze-btn {
+            width: 100%;
+            padding: 15px;
+            margin-top: 30px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .analyze-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.4);
+        }
+
+        .analyze-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .results-section {
+            display: none;
+            margin-top: 30px;
+        }
+
+        .results-section.show {
+            display: block;
+        }
+
+        .results-card {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            padding: 30px;
+        }
+
+        .results-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .results-header h2 {
+            color: #333;
+        }
+
+        .results-type {
+            padding: 8px 20px;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .results-type.prediction {
+            background: #e3f2fd;
+            color: #1976d2;
+        }
+
+        .results-type.detection {
+            background: #ffebee;
+            color: #c62828;
+        }
+
+        .results-image {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .results-image img {
+            max-width: 100%;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .metric-card {
+            padding: 15px;
+            background: #f8f9ff;
+            border-radius: 10px;
+        }
+
+        .metric-card .label {
+            font-size: 12px;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .metric-card .value {
+            font-size: 24px;
+            font-weight: 700;
+            color: #667eea;
+            margin-top: 5px;
+        }
+
+        .anomalies-list {
+            max-height: 300px;
+            overflow-y: auto;
+            background: #f8f9ff;
+            border-radius: 10px;
+            padding: 15px;
+        }
+
+        .anomaly-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px;
+            background: white;
+            border-radius: 8px;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+
+        .anomaly-item .time {
+            color: #666;
+        }
+
+        .anomaly-item .value {
+            font-weight: 600;
+            color: #c62828;
+        }
+
+        .anomaly-item .score {
+            color: #888;
+            font-size: 12px;
+        }
+
+        .error-message {
+            background: #ffebee;
+            color: #c62828;
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 20px;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 40px;
+        }
+
+        .loading.show {
+            display: block;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .algorithm-specific {
+            display: none;
+            margin-top: 15px;
+        }
+
+        .algorithm-specific.show {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>时间序列分析</h1>
+
+        <div class="main-card">
+            <!-- 上传区域 -->
+            <div class="upload-section" id="uploadSection">
+                <div class="upload-icon">📊</div>
+                <div class="upload-text">
+                    上传时间序列 JSON 文件<br>
+                    <small>格式: {"units": "", "series": [{"counter": "", "endpoint": "", "data": [[时间戳, 数值], ...]}]}</small>
+                </div>
+                <button class="upload-btn" onclick="document.getElementById('fileInput').click()">
+                    选择文件
+                </button>
+                <input type="file" id="fileInput" accept=".json">
+                <div class="file-info" id="fileInfo"></div>
+            </div>
+
+            <!-- 分析类型选择 -->
+            <div class="type-selector">
+                <div class="type-option" data-type="prediction" onclick="selectType('prediction')">
+                    <h3>📈 预测</h3>
+                    <p>使用 Prophet 预测未来值</p>
+                </div>
+                <div class="type-option" data-type="detection" onclick="selectType('detection')">
+                    <h3>🔍 异常检测</h3>
+                    <p>使用 PyOD 检测异常值</p>
+                </div>
+            </div>
+
+            <!-- 预测参数 -->
+            <div class="params-section" id="predictionParams">
+                <h2 style="margin-bottom: 20px; color: #333;">Prophet 预测参数</h2>
+                <div class="params-grid">
+                    <div class="param-group">
+                        <label>增长类型</label>
+                        <select name="growth">
+                            <option value="linear" selected>linear</option>
+                            <option value="logistic">logistic</option>
+                            <option value="flat">flat</option>
+                        </select>
+                    </div>
+                    <div class="param-group">
+                        <label>预测周期数</label>
+                        <input type="number" name="forecast_periods" value="30" min="1" max="1000">
+                        <div class="hint">预测未来多少个点</div>
+                    </div>
+                    <div class="param-group">
+                        <label>变点数量</label>
+                        <input type="number" name="n_changepoints" value="25" min="0" max="100">
+                        <div class="hint">潜在变点数量</div>
+                    </div>
+                    <div class="param-group">
+                        <label>变点范围</label>
+                        <input type="number" name="changepoint_range" value="0.8" min="0" max="1" step="0.05">
+                        <div class="hint">历史数据中变点比例</div>
+                    </div>
+                    <div class="param-group">
+                        <label>季节性模式</label>
+                        <select name="seasonality_mode">
+                            <option value="additive" selected>加法</option>
+                            <option value="multiplicative">乘法</option>
+                        </select>
+                    </div>
+                    <div class="param-group">
+                        <label>季节性强度</label>
+                        <input type="number" name="seasonality_prior_scale" value="10" min="0" max="50" step="1">
+                        <div class="hint">季节性强度</div>
+                    </div>
+                    <div class="param-group">
+                        <label>变点灵活性</label>
+                        <input type="number" name="changepoint_prior_scale" value="0.05" min="0" max="1" step="0.01">
+                        <div class="hint">变点灵活性</div>
+                    </div>
+                    <div class="param-group">
+                        <label>置信区间宽度</label>
+                        <input type="number" name="interval_width" value="0.8" min="0" max="1" step="0.05">
+                        <div class="hint">不确定性区间宽度</div>
+                    </div>
+                    <div class="param-group">
+                        <label>年度季节性</label>
+                        <select name="yearly_seasonality">
+                            <option value="auto" selected>自动</option>
+                            <option value="true">启用</option>
+                            <option value="false">禁用</option>
+                        </select>
+                    </div>
+                    <div class="param-group">
+                        <label>周季节性</label>
+                        <select name="weekly_seasonality">
+                            <option value="auto" selected>自动</option>
+                            <option value="true">启用</option>
+                            <option value="false">禁用</option>
+                        </select>
+                    </div>
+                    <div class="param-group">
+                        <label>日季节性</label>
+                        <select name="daily_seasonality">
+                            <option value="auto" selected>自动</option>
+                            <option value="true">启用</option>
+                            <option value="false">禁用</option>
+                        </select>
+                    </div>
+                    <div class="param-group checkbox-group">
+                        <input type="checkbox" name="add_monthly_seasonality" id="monthlySeasonality">
+                        <label for="monthlySeasonality" style="margin: 0;">添加月度季节性</label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 异常检测参数 -->
+            <div class="params-section" id="detectionParams">
+                <h2 style="margin-bottom: 20px; color: #333;">异常检测参数</h2>
+                <div class="params-grid">
+                    <div class="param-group">
+                        <label>算法</label>
+                        <select name="algorithm" id="algorithmSelect" onchange="updateAlgorithmParams()">
+                            <option value="iforest" selected>孤立森林 (IForest)</option>
+                            <option value="lof">局部离群因子 (LOF)</option>
+                            <option value="ocsvm">单类 SVM (OCSVM)</option>
+                            <option value="knn">K 近邻 (KNN)</option>
+                            <option value="abod">基于角度的异常检测 (ABOD)</option>
+                            <option value="cblof">基于聚类的 LOF (CBLOF)</option>
+                            <option value="hbos">直方图异常检测 (HBOS)</option>
+                            <option value="mcd">最小协方差行列式 (MCD)</option>
+                            <option value="sod">随机子空间方法 (SOD)</option>
+                        </select>
+                    </div>
+                    <div class="param-group">
+                        <label>异常比例</label>
+                        <input type="number" name="contamination" value="0.1" min="0.01" max="0.5" step="0.01">
+                        <div class="hint">预期异常值比例</div>
+                    </div>
+                    <div class="param-group">
+                        <label>滚动窗口</label>
+                        <input type="number" name="rolling_window" value="5" min="1" max="50">
+                        <div class="hint">滚动统计窗口大小</div>
+                    </div>
+                    <div class="param-group">
+                        <label>滞后阶数</label>
+                        <input type="number" name="n_lags" value="3" min="1" max="10">
+                        <div class="hint">创建滞后特征数量</div>
+                    </div>
+                    <div class="param-group checkbox-group">
+                        <input type="checkbox" name="use_time_features" id="useTimeFeatures" checked>
+                        <label for="useTimeFeatures" style="margin: 0;">使用时间特征</label>
+                    </div>
+                    <div class="param-group checkbox-group">
+                        <input type="checkbox" name="use_lag_features" id="useLagFeatures" checked>
+                        <label for="useLagFeatures" style="margin: 0;">使用滞后特征</label>
+                    </div>
+                </div>
+
+                <!-- 算法特定参数 -->
+                <div id="iforestParams" class="algorithm-specific show params-grid">
+                    <div class="param-group">
+                        <label>估计器数量</label>
+                        <input type="number" name="n_estimators" value="100" min="10" max="500">
+                        <div class="hint">森林中树的数量</div>
+                    </div>
+                    <div class="param-group">
+                        <label>最大样本数</label>
+                        <input type="number" name="max_samples" value="256" min="10" max="1000">
+                        <div class="hint">每棵树的样本数</div>
+                    </div>
+                    <div class="param-group">
+                        <label>最大特征数</label>
+                        <input type="number" name="max_features" value="1.0" min="0.1" max="1.0" step="0.1">
+                        <div class="hint">每棵树的最大特征比例</div>
+                    </div>
+                    <div class="param-group checkbox-group">
+                        <input type="checkbox" name="bootstrap" id="iforestBootstrap">
+                        <label for="iforestBootstrap" style="margin: 0;">Bootstrap 采样</label>
+                    </div>
+                </div>
+
+                <div id="lofParams" class="algorithm-specific params-grid">
+                    <div class="param-group">
+                        <label>邻居数量</label>
+                        <input type="number" name="n_neighbors" value="20" min="1" max="100">
+                        <div class="hint">使用的邻居数</div>
+                    </div>
+                    <div class="param-group">
+                        <label>算法类型</label>
+                        <select name="algorithm_type">
+                            <option value="auto" selected>自动</option>
+                            <option value="ball_tree">Ball Tree</option>
+                            <option value="kd_tree">KD Tree</option>
+                            <option value="brute">暴力</option>
+                        </select>
+                    </div>
+                    <div class="param-group">
+                        <label>叶子大小</label>
+                        <input type="number" name="leaf_size" value="30" min="1" max="100">
+                    </div>
+                </div>
+
+                <div id="ocsvmParams" class="algorithm-specific params-grid">
+                    <div class="param-group">
+                        <label>核函数</label>
+                        <select name="kernel">
+                            <option value="rbf" selected>RBF</option>
+                            <option value="linear">线性</option>
+                            <option value="poly">多项式</option>
+                            <option value="sigmoid">Sigmoid</option>
+                        </select>
+                    </div>
+                    <div class="param-group">
+                        <label>多项式阶数</label>
+                        <input type="number" name="degree" value="3" min="1" max="10">
+                    </div>
+                    <div class="param-group">
+                        <label>Gamma</label>
+                        <input type="text" name="gamma" value="scale">
+                    </div>
+                    <div class="param-group">
+                        <label>Nu</label>
+                        <input type="number" name="nu" value="0.5" min="0.01" max="1" step="0.01">
+                        <div class="hint">异常值上界</div>
+                    </div>
+                </div>
+
+                <div id="knnParams" class="algorithm-specific params-grid">
+                    <div class="param-group">
+                        <label>邻居数量</label>
+                        <input type="number" name="n_neighbors" value="5" min="1" max="50">
+                    </div>
+                    <div class="param-group">
+                        <label>方法</label>
+                        <select name="knn_method">
+                            <option value="largest" selected>最大</option>
+                            <option value="mean">平均</option>
+                            <option value="median">中位数</option>
+                        </select>
+                    </div>
+                    <div class="param-group">
+                        <label>半径</label>
+                        <input type="number" name="radius" value="1.0" min="0.1" max="10" step="0.1">
+                    </div>
+                    <div class="param-group">
+                        <label>算法类型</label>
+                        <select name="algorithm_type">
+                            <option value="auto" selected>自动</option>
+                            <option value="ball_tree">Ball Tree</option>
+                            <option value="kd_tree">KD Tree</option>
+                            <option value="brute">暴力</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div id="abodParams" class="algorithm-specific params-grid">
+                    <div class="param-group">
+                        <label>邻居数量</label>
+                        <input type="number" name="abod_neighbors" value="10" min="5" max="50">
+                    </div>
+                    <div class="param-group">
+                        <label>方法</label>
+                        <select name="abod_method">
+                            <option value="fast" selected>快速</option>
+                            <option value="default">默认</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div id="cblofParams" class="algorithm-specific params-grid">
+                    <div class="param-group">
+                        <label>聚类数量</label>
+                        <input type="number" name="n_clusters" value="8" min="2" max="50">
+                    </div>
+                    <div class="param-group">
+                        <label>Alpha</label>
+                        <input type="number" name="alpha" value="0.9" min="0" max="1" step="0.05">
+                    </div>
+                    <div class="param-group">
+                        <label>Beta</label>
+                        <input type="number" name="beta" value="10" min="1" max="100">
+                    </div>
+                    <div class="param-group checkbox-group">
+                        <input type="checkbox" name="use_weights" id="cblofWeights">
+                        <label for="cblofWeights" style="margin: 0;">使用权重</label>
+                    </div>
+                </div>
+
+                <div id="hbosParams" class="algorithm-specific params-grid">
+                    <div class="param-group">
+                        <label>直方箱数量</label>
+                        <input type="number" name="n_bins" value="10" min="1" max="50">
+                    </div>
+                    <div class="param-group">
+                        <label>Alpha</label>
+                        <input type="number" name="hbos_alpha" value="0.1" min="0" max="1" step="0.05">
+                    </div>
+                    <div class="param-group">
+                        <label>容差</label>
+                        <input type="number" name="tol" value="0.5" min="0" max="1" step="0.05">
+                    </div>
+                </div>
+
+                <div id="mcdParams" class="algorithm-specific params-grid">
+                    <div class="param-group checkbox-group">
+                        <input type="checkbox" name="store_precision" id="mcdPrecision" checked>
+                        <label for="mcdPrecision" style="margin: 0;">存储精度</label>
+                    </div>
+                    <div class="param-group checkbox-group">
+                        <input type="checkbox" name="assume_centered" id="mcdCentered">
+                        <label for="mcdCentered" style="margin: 0;">假设中心化</label>
+                    </div>
+                </div>
+
+                <div id="sodParams" class="algorithm-specific params-grid">
+                    <div class="param-group">
+                        <label>邻居数量</label>
+                        <input type="number" name="n_neighbors" value="20" min="5" max="100">
+                    </div>
+                    <div class="param-group">
+                        <label>参考集大小</label>
+                        <input type="number" name="ref_set" value="10" min="5" max="50">
+                    </div>
+                    <div class="param-group">
+                        <label>Alpha</label>
+                        <input type="number" name="sod_alpha" value="0.8" min="0" max="1" step="0.05">
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- 分析按钮 -->
+            <button class="analyze-btn" id="analyzeBtn" onclick="analyze()" disabled>
+                分析时间序列
+            </button>
+
+            <!-- 加载状态 -->
+            <div class="loading" id="loading">
+                <div class="spinner"></div>
+                <p>正在分析时间序列数据...</p>
+            </div>
+        </div>
+
+        <!-- 结果区域 -->
+        <div class="results-section" id="resultsSection">
+            <div class="results-card">
+                <div class="results-header">
+                    <h2>分析结果</h2>
+                    <span class="results-type" id="resultsType"></span>
+                </div>
+
+                <div class="results-image">
+                    <img id="resultsImage" alt="分析结果">
+                </div>
+
+                <h3 style="margin-bottom: 15px; color: #333;">指标</h3>
+                <div class="metrics-grid" id="metricsGrid"></div>
+
+                <div id="anomaliesSection" style="display: none;">
+                    <h3 style="margin-bottom: 15px; color: #333;">检测到的异常</h3>
+                    <div class="anomalies-list" id="anomaliesList"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let selectedFile = null;
+        let selectedType = null;
+
+        // 文件输入处理
+        document.getElementById('fileInput').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                selectedFile = file;
+                document.getElementById('fileInfo').textContent = `已选择: ${file.name}`;
+                document.getElementById('fileInfo').classList.add('show');
+                updateAnalyzeButton();
+            }
+        });
+
+        // 拖放上传
+        const uploadSection = document.getElementById('uploadSection');
+        uploadSection.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadSection.classList.add('dragover');
+        });
+        uploadSection.addEventListener('dragleave', () => {
+            uploadSection.classList.remove('dragover');
+        });
+        uploadSection.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadSection.classList.remove('dragover');
+            const file = e.dataTransfer.files[0];
+            if (file && file.name.endsWith('.json')) {
+                selectedFile = file;
+                document.getElementById('fileInfo').textContent = `已选择: ${file.name}`;
+                document.getElementById('fileInfo').classList.add('show');
+                updateAnalyzeButton();
+            }
+        });
+
+        function selectType(type) {
+            selectedType = type;
+            document.querySelectorAll('.type-option').forEach(el => el.classList.remove('selected'));
+            document.querySelector(`.type-option[data-type="${type}"]`).classList.add('selected');
+
+            document.querySelectorAll('.params-section').forEach(el => el.classList.remove('show'));
+            if (type === 'prediction') {
+                document.getElementById('predictionParams').classList.add('show');
+            } else {
+                document.getElementById('detectionParams').classList.add('show');
+            }
+            updateAnalyzeButton();
+        }
+
+        function updateAnalyzeButton() {
+            const btn = document.getElementById('analyzeBtn');
+            btn.disabled = !(selectedFile && selectedType);
+        }
+
+        function updateAlgorithmParams() {
+            const algorithm = document.getElementById('algorithmSelect').value;
+            document.querySelectorAll('.algorithm-specific').forEach(el => el.classList.remove('show'));
+            const paramsDiv = document.getElementById(`${algorithm}Params`);
+            if (paramsDiv) {
+                paramsDiv.classList.add('show');
+            }
+        }
+
+        async function analyze() {
+            if (!selectedFile || !selectedType) return;
+
+            const loading = document.getElementById('loading');
+            const resultsSection = document.getElementById('resultsSection');
+            const analyzeBtn = document.getElementById('analyzeBtn');
+
+            loading.classList.add('show');
+            resultsSection.classList.remove('show');
+            analyzeBtn.disabled = true;
+
+            try {
+                const formData = new FormData();
+                formData.append('file', selectedFile);
+                formData.append('analysis_type', selectedType);
+
+                // 收集所有表单参数
+                const paramsSection = selectedType === 'prediction' ?
+                    document.getElementById('predictionParams') :
+                    document.getElementById('detectionParams');
+
+                const inputs = paramsSection.querySelectorAll('input, select');
+                inputs.forEach(input => {
+                    if (input.type === 'checkbox') {
+                        formData.append(input.name, input.checked);
+                    } else {
+                        formData.append(input.name, input.value);
+                    }
+                });
+
+                const response = await fetch('/analyze', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    displayResults(result);
+                } else {
+                    showError(result.error);
+                }
+            } catch (error) {
+                showError('错误: ' + error.message);
+            } finally {
+                loading.classList.remove('show');
+                analyzeBtn.disabled = false;
+            }
+        }
+
+        function displayResults(result) {
+            const resultsSection = document.getElementById('resultsSection');
+            const resultsImage = document.getElementById('resultsImage');
+            const resultsType = document.getElementById('resultsType');
+            const metricsGrid = document.getElementById('metricsGrid');
+            const anomaliesSection = document.getElementById('anomaliesSection');
+            const anomaliesList = document.getElementById('anomaliesList');
+
+            // 设置图片
+            resultsImage.src = 'data:image/png;base64,' + result.image;
+
+            // 设置类型标签
+            resultsType.textContent = result.type === 'prediction' ? '预测' : '异常检测';
+            resultsType.className = 'results-type ' + result.type;
+
+            // 显示指标
+            metricsGrid.innerHTML = '';
+            for (const [key, value] of Object.entries(result.metrics)) {
+                const metricCard = document.createElement('div');
+                metricCard.className = 'metric-card';
+                metricCard.innerHTML = `
+                    <div class="label">${key.replace(/_/g, ' ')}</div>
+                    <div class="value">${value}</div>
+                `;
+                metricsGrid.appendChild(metricCard);
+            }
+
+            // 显示异常详情（如果是异常检测）
+            if (result.type === 'detection' && result.anomalies && result.anomalies.length > 0) {
+                anomaliesSection.style.display = 'block';
+                anomaliesList.innerHTML = '';
+                result.anomalies.forEach(anomaly => {
+                    const date = new Date(anomaly.datetime);
+                    const item = document.createElement('div');
+                    item.className = 'anomaly-item';
+                    item.innerHTML = `
+                        <span class="time">${date.toLocaleString()}</span>
+                        <span class="value">数值: ${anomaly.value.toFixed(4)}</span>
+                        <span class="score">分数: ${anomaly.score.toFixed(4)}</span>
+                    `;
+                    anomaliesList.appendChild(item);
+                });
+            } else {
+                anomaliesSection.style.display = 'none';
+            }
+
+            resultsSection.classList.add('show');
+        }
+
+        function showError(message) {
+            const mainCard = document.querySelector('.main-card');
+            let errorDiv = document.querySelector('.error-message');
+            if (!errorDiv) {
+                errorDiv = document.createElement('div');
+                errorDiv.className = 'error-message';
+                mainCard.appendChild(errorDiv);
+            }
+            errorDiv.textContent = message;
+            errorDiv.style.display = 'block';
+
+            setTimeout(() => {
+                errorDiv.style.display = 'none';
+            }, 5000);
+        }
+    </script>
+</body>
+</html>

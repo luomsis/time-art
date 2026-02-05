@@ -1,0 +1,7 @@
+flask>=3.0.0
+prophet>=1.1.5
+pyod==2.0.6
+matplotlib>=3.8.0
+pandas>=2.2.0
+numpy>=1.24.0
+werkzeug>=3.0.0
