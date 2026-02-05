@@ -266,17 +266,6 @@
             color: #c62828;
         }
 
-        .results-image {
-            text-align: center;
-            margin-bottom: 30px;
-        }
-
-        .results-image img {
-            max-width: 100%;
-            border-radius: 10px;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-        }
-
         .metrics-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
@@ -378,35 +367,6 @@
             display: block;
         }
 
-        /* Interactive Chart Styles */
-        .chart-view-toggle {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 20px;
-            justify-content: center;
-        }
-
-        .view-toggle-btn {
-            padding: 10px 25px;
-            border: 2px solid #667eea;
-            background: white;
-            color: #667eea;
-            border-radius: 20px;
-            cursor: pointer;
-            font-weight: 600;
-            transition: all 0.3s;
-        }
-
-        .view-toggle-btn.active {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-        }
-
-        .view-toggle-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
-        }
-
         .chart-container {
             position: relative;
             margin-bottom: 30px;
@@ -459,22 +419,6 @@
 
         .time-filter-controls .reset-btn {
             background: #6c757d;
-        }
-
-        .static-image-container {
-            display: none;
-        }
-
-        .static-image-container.show {
-            display: block;
-        }
-
-        .interactive-chart-container {
-            display: none;
-        }
-
-        .interactive-chart-container.show {
-            display: block;
         }
 
         /* Tooltip help icon styles */
@@ -992,18 +936,8 @@
                     <span class="results-type" id="resultsType"></span>
                 </div>
 
-                <!-- 图表视图切换 -->
-                <div class="chart-view-toggle" id="viewToggle" style="display: none;">
-                    <button class="view-toggle-btn active" onclick="switchView('interactive')">
-                        📊 交互式图表
-                    </button>
-                    <button class="view-toggle-btn" onclick="switchView('static')">
-                        🖼️ 静态图片
-                    </button>
-                </div>
-
-                <!-- 时间过滤器 (仅交互式图表) -->
-                <div class="time-filter-controls interactive-chart-container" id="timeFilterControls">
+                <!-- 时间过滤器 -->
+                <div class="time-filter-controls" id="timeFilterControls">
                     <label>时间范围:</label>
                     <input type="datetime-local" id="timeStart" step="second">
                     <span>至</span>
@@ -1012,18 +946,9 @@
                     <button class="reset-btn" onclick="resetTimeFilter()">重置</button>
                 </div>
 
-                <!-- 静态图片 -->
-                <div class="static-image-container" id="staticImageContainer">
-                    <div class="results-image">
-                        <img id="resultsImage" alt="分析结果">
-                    </div>
-                </div>
-
                 <!-- 交互式图表 -->
-                <div class="interactive-chart-container" id="interactiveChartContainer">
-                    <div class="chart-container">
-                        <div id="interactiveChart"></div>
-                    </div>
+                <div class="chart-container">
+                    <div id="interactiveChart"></div>
                 </div>
 
                 <h3 style="margin-bottom: 15px; color: #333;">指标</h3>
@@ -1194,35 +1119,27 @@
 
         function displayResults(result) {
             const resultsSection = document.getElementById('resultsSection');
-            const resultsImage = document.getElementById('resultsImage');
             const resultsType = document.getElementById('resultsType');
             const metricsGrid = document.getElementById('metricsGrid');
             const anomaliesSection = document.getElementById('anomaliesSection');
             const anomaliesList = document.getElementById('anomaliesList');
-            const viewToggle = document.getElementById('viewToggle');
 
             // 保存数据供交互式图表使用
             currentChartData = result.chart_data;
             currentAnalysisType = result.type;
 
-            // 设置图片
-            resultsImage.src = 'data:image/png;base64,' + result.image;
-
             // 设置类型标签
             resultsType.textContent = result.type === 'prediction' ? '预测' : '异常检测';
             resultsType.className = 'results-type ' + result.type;
 
-            // 显示视图切换按钮
+            // 渲染交互式图表
             if (result.chart_data && echartsAvailable) {
-                viewToggle.style.display = 'flex';
-                // 默认显示交互式图表
-                switchView('interactive');
-            } else {
-                viewToggle.style.display = 'none';
-                switchView('static');
-                if (!echartsAvailable && result.chart_data) {
-                    console.warn('ECharts library failed to load. Showing static image only.');
-                }
+                requestAnimationFrame(() => {
+                    renderInteractiveChart();
+                });
+            } else if (!echartsAvailable) {
+                alert('ECharts 库未加载，无法显示交互式图表');
+                return;
             }
 
             // 显示指标
@@ -1264,46 +1181,11 @@
             resultsSection.classList.add('show');
         }
 
-        // 切换图表视图
-        function switchView(view) {
-            const staticContainer = document.getElementById('staticImageContainer');
-            const interactiveContainer = document.getElementById('interactiveChartContainer');
-            const timeFilterControls = document.getElementById('timeFilterControls');
-            const buttons = document.querySelectorAll('.view-toggle-btn');
-
-            buttons.forEach(btn => btn.classList.remove('active'));
-
-            if (view === 'interactive') {
-                if (!echartsAvailable) {
-                    alert('ECharts 库未加载，请使用静态图片视图');
-                    switchView('static');
-                    return;
-                }
-                staticContainer.classList.remove('show');
-                interactiveContainer.classList.add('show');
-                timeFilterControls.classList.add('show');
-                buttons[0].classList.add('active');
-                // 使用 requestAnimationFrame 确保 DOM 完全更新后再渲染图表
-                requestAnimationFrame(() => {
-                    renderInteractiveChart();
-                });
-            } else {
-                staticContainer.classList.add('show');
-                interactiveContainer.classList.remove('show');
-                timeFilterControls.classList.remove('show');
-                buttons[1].classList.add('active');
-                if (chartInstance) {
-                    chartInstance.dispose();
-                    chartInstance = null;
-                }
-            }
-        }
-
         // 渲染交互式图表
         function renderInteractiveChart(filteredData = null) {
             if (!currentChartData) return;
             if (!echartsAvailable) {
-                alert('ECharts 库未加载，请使用静态图片视图');
+                alert('ECharts 库未加载，无法显示图表');
                 return;
             }
 
