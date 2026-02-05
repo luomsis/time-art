@@ -1,17 +1,21 @@
 # Time Series Analysis Web Service
 
-A web-based time series analysis tool featuring Prophet forecasting and anomaly detection using scikit-learn.
+A web-based time series analysis tool featuring Prophet forecasting and anomaly detection using PyOD.
 
 ## Features
 
 - **Time Series Prediction**: Uses Facebook Prophet to forecast future values
 - **Anomaly Detection**: Multiple algorithms for detecting outliers:
-  - Isolation Forest
+  - Isolation Forest (IForest)
   - Local Outlier Factor (LOF)
-  - One-Class SVM
-  - DBSCAN Clustering
-  - PCA-based detection
-- **Interactive Web UI**: Upload JSON files and visualize results
+  - One-Class SVM (OCSVM)
+  - K Nearest Neighbors (KNN)
+  - Angle-Based Outlier Detection (ABOD)
+  - Clustering-Based Local Outlier Factor (CBLOF)
+  - Histogram-Based Outlier Score (HBOS)
+  - Minimum Covariance Determinant (MCD)
+  - Subspace Outlier Detection (SOD)
+- **Interactive Web UI**: Upload JSON files and visualize results with ECharts
 - **Configurable Parameters**: Fine-tune algorithms with exposed parameters
 
 ## Requirements
@@ -40,7 +44,7 @@ source .venv/bin/activate
 python main.py
 ```
 
-Access the web interface at http://localhost:5000
+Access the web interface at http://localhost:9999
 
 ## JSON Data Format
 
@@ -109,3 +113,11 @@ time-art/
 ## License
 
 MIT License
+
+## Changelog
+
+### 2026-02-05 - Interactive Chart Initialization Fix
+- Fixed issue where interactive chart data was compressed on the left side after initial analysis
+- Added `requestAnimationFrame` in `switchView()` to ensure DOM is fully updated before rendering
+- Enhanced `dataZoom` configuration with `minSpan`, `maxSpan`, and `filterMode` parameters
+- Chart now displays full data range immediately after analysis, matching the "reset" button behavior

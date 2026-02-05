@@ -476,6 +476,67 @@
         .interactive-chart-container.show {
             display: block;
         }
+
+        /* Tooltip help icon styles */
+        .param-label-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .help-icon {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: #667eea;
+            color: white;
+            font-size: 11px;
+            font-weight: bold;
+            cursor: help;
+            position: relative;
+            flex-shrink: 0;
+        }
+
+        .help-icon:hover {
+            background: #764ba2;
+        }
+
+        .help-tooltip {
+            position: absolute;
+            bottom: calc(100% + 8px);
+            left: 50%;
+            transform: translateX(-50%);
+            background: #333;
+            color: white;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            white-space: nowrap;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.2s;
+            z-index: 1000;
+            pointer-events: none;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+
+        .help-icon:hover .help-tooltip {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .help-tooltip::after {
+            content: '';
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            border: 5px solid transparent;
+            border-top-color: #333;
+        }
     </style>
 </head>
 <body>
@@ -514,7 +575,10 @@
                 <h2 style="margin-bottom: 20px; color: #333;">Prophet 预测参数</h2>
                 <div class="params-grid">
                     <div class="param-group">
-                        <label>增长类型</label>
+                        <div class="param-label-wrapper">
+                            <label>增长类型</label>
+                            <span class="help-icon">?<span class="help-tooltip">预测增长趋势类型：linear(线性)、logistic(饱和生长)、flat(平坦)</span></span>
+                        </div>
                         <select name="growth">
                             <option value="linear" selected>linear</option>
                             <option value="logistic">logistic</option>
@@ -522,44 +586,62 @@
                         </select>
                     </div>
                     <div class="param-group">
-                        <label>预测周期数</label>
+                        <div class="param-label-wrapper">
+                            <label>预测周期数</label>
+                            <span class="help-icon">?<span class="help-tooltip">预测未来多少个时间点</span></span>
+                        </div>
                         <input type="number" name="forecast_periods" value="30" min="1" max="1000">
-                        <div class="hint">预测未来多少个点</div>
                     </div>
                     <div class="param-group">
-                        <label>变点数量</label>
+                        <div class="param-label-wrapper">
+                            <label>变点数量</label>
+                            <span class="help-icon">?<span class="help-tooltip">趋势变化点的最大数量，值越大越灵活</span></span>
+                        </div>
                         <input type="number" name="n_changepoints" value="25" min="0" max="100">
-                        <div class="hint">潜在变点数量</div>
                     </div>
                     <div class="param-group">
-                        <label>变点范围</label>
+                        <div class="param-label-wrapper">
+                            <label>变点范围</label>
+                            <span class="help-icon">?<span class="help-tooltip">变点可能出现在历史数据的比例范围</span></span>
+                        </div>
                         <input type="number" name="changepoint_range" value="0.8" min="0" max="1" step="0.05">
-                        <div class="hint">历史数据中变点比例</div>
                     </div>
                     <div class="param-group">
-                        <label>季节性模式</label>
+                        <div class="param-label-wrapper">
+                            <label>季节性模式</label>
+                            <span class="help-icon">?<span class="help-tooltip">additive(加法)或multiplicative(乘法)季节性</span></span>
+                        </div>
                         <select name="seasonality_mode">
                             <option value="additive" selected>加法</option>
                             <option value="multiplicative">乘法</option>
                         </select>
                     </div>
                     <div class="param-group">
-                        <label>季节性强度</label>
+                        <div class="param-label-wrapper">
+                            <label>季节性强度</label>
+                            <span class="help-icon">?<span class="help-tooltip">季节性变化的强度，值越大季节性越明显</span></span>
+                        </div>
                         <input type="number" name="seasonality_prior_scale" value="10" min="0" max="50" step="1">
-                        <div class="hint">季节性强度</div>
                     </div>
                     <div class="param-group">
-                        <label>变点灵活性</label>
+                        <div class="param-label-wrapper">
+                            <label>变点灵活性</label>
+                            <span class="help-icon">?<span class="help-tooltip">趋势变化灵活性，值越大变化越剧烈</span></span>
+                        </div>
                         <input type="number" name="changepoint_prior_scale" value="0.05" min="0" max="1" step="0.01">
-                        <div class="hint">变点灵活性</div>
                     </div>
                     <div class="param-group">
-                        <label>置信区间宽度</label>
+                        <div class="param-label-wrapper">
+                            <label>置信区间宽度</label>
+                            <span class="help-icon">?<span class="help-tooltip">不确定性区间的宽度范围</span></span>
+                        </div>
                         <input type="number" name="interval_width" value="0.8" min="0" max="1" step="0.05">
-                        <div class="hint">不确定性区间宽度</div>
                     </div>
                     <div class="param-group">
-                        <label>年度季节性</label>
+                        <div class="param-label-wrapper">
+                            <label>年度季节性</label>
+                            <span class="help-icon">?<span class="help-tooltip">是否启用年度季节性模式</span></span>
+                        </div>
                         <select name="yearly_seasonality">
                             <option value="auto" selected>自动</option>
                             <option value="true">启用</option>
@@ -567,7 +649,10 @@
                         </select>
                     </div>
                     <div class="param-group">
-                        <label>周季节性</label>
+                        <div class="param-label-wrapper">
+                            <label>周季节性</label>
+                            <span class="help-icon">?<span class="help-tooltip">是否启用周季节性模式</span></span>
+                        </div>
                         <select name="weekly_seasonality">
                             <option value="auto" selected>自动</option>
                             <option value="true">启用</option>
@@ -575,7 +660,10 @@
                         </select>
                     </div>
                     <div class="param-group">
-                        <label>日季节性</label>
+                        <div class="param-label-wrapper">
+                            <label>日季节性</label>
+                            <span class="help-icon">?<span class="help-tooltip">是否启用日季节性模式</span></span>
+                        </div>
                         <select name="daily_seasonality">
                             <option value="auto" selected>自动</option>
                             <option value="true">启用</option>
@@ -594,7 +682,10 @@
                 <h2 style="margin-bottom: 20px; color: #333;">异常检测参数</h2>
                 <div class="params-grid">
                     <div class="param-group">
-                        <label>算法</label>
+                        <div class="param-label-wrapper">
+                            <label>算法</label>
+                            <span class="help-icon">?<span class="help-tooltip">选择异常检测算法</span></span>
+                        </div>
                         <select name="algorithm" id="algorithmSelect" onchange="updateAlgorithmParams()">
                             <option value="iforest" selected>孤立森林 (IForest)</option>
                             <option value="lof">局部离群因子 (LOF)</option>
@@ -608,19 +699,25 @@
                         </select>
                     </div>
                     <div class="param-group">
-                        <label>异常比例</label>
+                        <div class="param-label-wrapper">
+                            <label>异常比例</label>
+                            <span class="help-icon">?<span class="help-tooltip">预期异常值在数据中的比例</span></span>
+                        </div>
                         <input type="number" name="contamination" value="0.1" min="0.01" max="0.5" step="0.01">
-                        <div class="hint">预期异常值比例</div>
                     </div>
                     <div class="param-group">
-                        <label>滚动窗口</label>
+                        <div class="param-label-wrapper">
+                            <label>滚动窗口</label>
+                            <span class="help-icon">?<span class="help-tooltip">计算滚动统计的窗口大小</span></span>
+                        </div>
                         <input type="number" name="rolling_window" value="5" min="1" max="50">
-                        <div class="hint">滚动统计窗口大小</div>
                     </div>
                     <div class="param-group">
-                        <label>滞后阶数</label>
+                        <div class="param-label-wrapper">
+                            <label>滞后阶数</label>
+                            <span class="help-icon">?<span class="help-tooltip">创建滞后特征的数量</span></span>
+                        </div>
                         <input type="number" name="n_lags" value="3" min="1" max="10">
-                        <div class="hint">创建滞后特征数量</div>
                     </div>
                     <div class="param-group checkbox-group">
                         <input type="checkbox" name="use_time_features" id="useTimeFeatures" checked>
@@ -635,19 +732,25 @@
                 <!-- 算法特定参数 -->
                 <div id="iforestParams" class="algorithm-specific show params-grid">
                     <div class="param-group">
-                        <label>估计器数量</label>
+                        <div class="param-label-wrapper">
+                            <label>估计器数量</label>
+                            <span class="help-icon">?<span class="help-tooltip">森林中树的数量</span></span>
+                        </div>
                         <input type="number" name="n_estimators" value="100" min="10" max="500">
-                        <div class="hint">森林中树的数量</div>
                     </div>
                     <div class="param-group">
-                        <label>最大样本数</label>
+                        <div class="param-label-wrapper">
+                            <label>最大样本数</label>
+                            <span class="help-icon">?<span class="help-tooltip">每棵树训练的样本数</span></span>
+                        </div>
                         <input type="number" name="max_samples" value="256" min="10" max="1000">
-                        <div class="hint">每棵树的样本数</div>
                     </div>
                     <div class="param-group">
-                        <label>最大特征数</label>
+                        <div class="param-label-wrapper">
+                            <label>最大特征数</label>
+                            <span class="help-icon">?<span class="help-tooltip">每棵树的最大特征比例</span></span>
+                        </div>
                         <input type="number" name="max_features" value="1.0" min="0.1" max="1.0" step="0.1">
-                        <div class="hint">每棵树的最大特征比例</div>
                     </div>
                     <div class="param-group checkbox-group">
                         <input type="checkbox" name="bootstrap" id="iforestBootstrap">
@@ -657,12 +760,17 @@
 
                 <div id="lofParams" class="algorithm-specific params-grid">
                     <div class="param-group">
-                        <label>邻居数量</label>
+                        <div class="param-label-wrapper">
+                            <label>邻居数量</label>
+                            <span class="help-icon">?<span class="help-tooltip">计算局部密度时使用的邻居数</span></span>
+                        </div>
                         <input type="number" name="n_neighbors" value="20" min="1" max="100">
-                        <div class="hint">使用的邻居数</div>
                     </div>
                     <div class="param-group">
-                        <label>算法类型</label>
+                        <div class="param-label-wrapper">
+                            <label>算法类型</label>
+                            <span class="help-icon">?<span class="help-tooltip">邻居搜索算法</span></span>
+                        </div>
                         <select name="algorithm_type">
                             <option value="auto" selected>自动</option>
                             <option value="ball_tree">Ball Tree</option>
@@ -671,14 +779,20 @@
                         </select>
                     </div>
                     <div class="param-group">
-                        <label>叶子大小</label>
+                        <div class="param-label-wrapper">
+                            <label>叶子大小</label>
+                            <span class="help-icon">?<span class="help-tooltip">树算法的叶子大小</span></span>
+                        </div>
                         <input type="number" name="leaf_size" value="30" min="1" max="100">
                     </div>
                 </div>
 
                 <div id="ocsvmParams" class="algorithm-specific params-grid">
                     <div class="param-group">
-                        <label>核函数</label>
+                        <div class="param-label-wrapper">
+                            <label>核函数</label>
+                            <span class="help-icon">?<span class="help-tooltip">SVM核函数类型</span></span>
+                        </div>
                         <select name="kernel">
                             <option value="rbf" selected>RBF</option>
                             <option value="linear">线性</option>
@@ -687,27 +801,41 @@
                         </select>
                     </div>
                     <div class="param-group">
-                        <label>多项式阶数</label>
+                        <div class="param-label-wrapper">
+                            <label>多项式阶数</label>
+                            <span class="help-icon">?<span class="help-tooltip">多项式核的阶数</span></span>
+                        </div>
                         <input type="number" name="degree" value="3" min="1" max="10">
                     </div>
                     <div class="param-group">
-                        <label>Gamma</label>
+                        <div class="param-label-wrapper">
+                            <label>Gamma</label>
+                            <span class="help-icon">?<span class="help-tooltip">核系数，'scale'或'float'</span></span>
+                        </div>
                         <input type="text" name="gamma" value="scale">
                     </div>
                     <div class="param-group">
-                        <label>Nu</label>
+                        <div class="param-label-wrapper">
+                            <label>Nu</label>
+                            <span class="help-icon">?<span class="help-tooltip">异常值上界，训练误差分数</span></span>
+                        </div>
                         <input type="number" name="nu" value="0.5" min="0.01" max="1" step="0.01">
-                        <div class="hint">异常值上界</div>
                     </div>
                 </div>
 
                 <div id="knnParams" class="algorithm-specific params-grid">
                     <div class="param-group">
-                        <label>邻居数量</label>
+                        <div class="param-label-wrapper">
+                            <label>邻居数量</label>
+                            <span class="help-icon">?<span class="help-tooltip">计算距离时使用的邻居数</span></span>
+                        </div>
                         <input type="number" name="n_neighbors" value="5" min="1" max="50">
                     </div>
                     <div class="param-group">
-                        <label>方法</label>
+                        <div class="param-label-wrapper">
+                            <label>方法</label>
+                            <span class="help-icon">?<span class="help-tooltip">异常分数计算方法</span></span>
+                        </div>
                         <select name="knn_method">
                             <option value="largest" selected>最大</option>
                             <option value="mean">平均</option>
@@ -715,11 +843,17 @@
                         </select>
                     </div>
                     <div class="param-group">
-                        <label>半径</label>
+                        <div class="param-label-wrapper">
+                            <label>半径</label>
+                            <span class="help-icon">?<span class="help-tooltip">邻域半径</span></span>
+                        </div>
                         <input type="number" name="radius" value="1.0" min="0.1" max="10" step="0.1">
                     </div>
                     <div class="param-group">
-                        <label>算法类型</label>
+                        <div class="param-label-wrapper">
+                            <label>算法类型</label>
+                            <span class="help-icon">?<span class="help-tooltip">邻居搜索算法</span></span>
+                        </div>
                         <select name="algorithm_type">
                             <option value="auto" selected>自动</option>
                             <option value="ball_tree">Ball Tree</option>
@@ -731,11 +865,17 @@
 
                 <div id="abodParams" class="algorithm-specific params-grid">
                     <div class="param-group">
-                        <label>邻居数量</label>
+                        <div class="param-label-wrapper">
+                            <label>邻居数量</label>
+                            <span class="help-icon">?<span class="help-tooltip">计算角度时使用的邻居数</span></span>
+                        </div>
                         <input type="number" name="abod_neighbors" value="10" min="5" max="50">
                     </div>
                     <div class="param-group">
-                        <label>方法</label>
+                        <div class="param-label-wrapper">
+                            <label>方法</label>
+                            <span class="help-icon">?<span class="help-tooltip">计算方法</span></span>
+                        </div>
                         <select name="abod_method">
                             <option value="fast" selected>快速</option>
                             <option value="default">默认</option>
@@ -745,15 +885,24 @@
 
                 <div id="cblofParams" class="algorithm-specific params-grid">
                     <div class="param-group">
-                        <label>聚类数量</label>
+                        <div class="param-label-wrapper">
+                            <label>聚类数量</label>
+                            <span class="help-icon">?<span class="help-tooltip">聚类算法的簇数量</span></span>
+                        </div>
                         <input type="number" name="n_clusters" value="8" min="2" max="50">
                     </div>
                     <div class="param-group">
-                        <label>Alpha</label>
+                        <div class="param-label-wrapper">
+                            <label>Alpha</label>
+                            <span class="help-icon">?<span class="help-tooltip">簇大小系数</span></span>
+                        </div>
                         <input type="number" name="alpha" value="0.9" min="0" max="1" step="0.05">
                     </div>
                     <div class="param-group">
-                        <label>Beta</label>
+                        <div class="param-label-wrapper">
+                            <label>Beta</label>
+                            <span class="help-icon">?<span class="help-tooltip">簇大小系数</span></span>
+                        </div>
                         <input type="number" name="beta" value="10" min="1" max="100">
                     </div>
                     <div class="param-group checkbox-group">
@@ -764,15 +913,24 @@
 
                 <div id="hbosParams" class="algorithm-specific params-grid">
                     <div class="param-group">
-                        <label>直方箱数量</label>
+                        <div class="param-label-wrapper">
+                            <label>直方箱数量</label>
+                            <span class="help-icon">?<span class="help-tooltip">直方图的箱数</span></span>
+                        </div>
                         <input type="number" name="n_bins" value="10" min="1" max="50">
                     </div>
                     <div class="param-group">
-                        <label>Alpha</label>
+                        <div class="param-label-wrapper">
+                            <label>Alpha</label>
+                            <span class="help-icon">?<span class="help-tooltip">正则化系数</span></span>
+                        </div>
                         <input type="number" name="hbos_alpha" value="0.1" min="0" max="1" step="0.05">
                     </div>
                     <div class="param-group">
-                        <label>容差</label>
+                        <div class="param-label-wrapper">
+                            <label>容差</label>
+                            <span class="help-icon">?<span class="help-tooltip">直方图边界容差</span></span>
+                        </div>
                         <input type="number" name="tol" value="0.5" min="0" max="1" step="0.05">
                     </div>
                 </div>
@@ -790,15 +948,24 @@
 
                 <div id="sodParams" class="algorithm-specific params-grid">
                     <div class="param-group">
-                        <label>邻居数量</label>
+                        <div class="param-label-wrapper">
+                            <label>邻居数量</label>
+                            <span class="help-icon">?<span class="help-tooltip">计算子空间时使用的邻居数</span></span>
+                        </div>
                         <input type="number" name="n_neighbors" value="20" min="5" max="100">
                     </div>
                     <div class="param-group">
-                        <label>参考集大小</label>
+                        <div class="param-label-wrapper">
+                            <label>参考集大小</label>
+                            <span class="help-icon">?<span class="help-tooltip">参考集的大小</span></span>
+                        </div>
                         <input type="number" name="ref_set" value="10" min="5" max="50">
                     </div>
                     <div class="param-group">
-                        <label>Alpha</label>
+                        <div class="param-label-wrapper">
+                            <label>Alpha</label>
+                            <span class="help-icon">?<span class="help-tooltip">相似度阈值</span></span>
+                        </div>
                         <input type="number" name="sod_alpha" value="0.8" min="0" max="1" step="0.05">
                     </div>
                 </div>
@@ -988,6 +1155,43 @@
             }
         }
 
+        // 指标名称中文映射 - 支持snake_case和spaced格式
+        const metricNamesCN = {
+            // snake_case keys (from backend)
+            'forecast_periods': '预测周期数',
+            'data_points': '数据点数',
+            'forecast_start': '预测开始时间',
+            'forecast_end': '预测结束时间',
+            'mse': '均方误差 (MSE)',
+            'rmse': '均方根误差 (RMSE)',
+            'mae': '平均绝对误差 (MAE)',
+            'mape': '平均绝对百分比误差 (MAPE)',
+            'algorithm': '算法',
+            'total_points': '总数据点',
+            'anomaly_count': '异常数量',
+            'normal_count': '正常数量',
+            'anomaly_percentage': '异常占比 (%)',
+            'contamination': '异常比例',
+            'threshold': '阈值',
+            'min_anomaly_value': '最小异常值',
+            'max_anomaly_value': '最大异常值',
+            'mean_anomaly_value': '平均异常值',
+            'counter': '指标名称',
+            'endpoint': '端点名称',
+            // spaced format (fallback)
+            'forecast periods': '预测周期数',
+            'data points': '数据点数',
+            'forecast start': '预测开始时间',
+            'forecast end': '预测结束时间',
+            'total points': '总数据点',
+            'anomaly count': '异常数量',
+            'normal count': '正常数量',
+            'anomaly percentage': '异常占比 (%)',
+            'min anomaly value': '最小异常值',
+            'max anomaly value': '最大异常值',
+            'mean anomaly value': '平均异常值'
+        };
+
         function displayResults(result) {
             const resultsSection = document.getElementById('resultsSection');
             const resultsImage = document.getElementById('resultsImage');
@@ -1026,8 +1230,13 @@
             for (const [key, value] of Object.entries(result.metrics)) {
                 const metricCard = document.createElement('div');
                 metricCard.className = 'metric-card';
+                // 先尝试原始key，再尝试小写key，最后尝试带空格的key
+                const displayName = metricNamesCN[key] ||
+                                   metricNamesCN[key.toLowerCase()] ||
+                                   metricNamesCN[key.toLowerCase().replace(/_/g, ' ')] ||
+                                   key.replace(/_/g, ' ');
                 metricCard.innerHTML = `
-                    <div class="label">${key.replace(/_/g, ' ')}</div>
+                    <div class="label">${displayName}</div>
                     <div class="value">${value}</div>
                 `;
                 metricsGrid.appendChild(metricCard);
@@ -1074,7 +1283,10 @@
                 interactiveContainer.classList.add('show');
                 timeFilterControls.classList.add('show');
                 buttons[0].classList.add('active');
-                renderInteractiveChart();
+                // 使用 requestAnimationFrame 确保 DOM 完全更新后再渲染图表
+                requestAnimationFrame(() => {
+                    renderInteractiveChart();
+                });
             } else {
                 staticContainer.classList.add('show');
                 interactiveContainer.classList.remove('show');
@@ -1112,7 +1324,8 @@
                     title: {
                         text: `${currentChartData.endpoint || ''} - ${currentChartData.counter || ''}`,
                         left: 'center',
-                        textStyle: { fontSize: 16 }
+                        textStyle: { fontSize: 16 },
+                        padding: [15, 10, 25, 10]
                     },
                     tooltip: {
                         trigger: 'axis',
@@ -1126,12 +1339,14 @@
                     },
                     legend: {
                         data: ['实际值', '预测值', '置信区间'],
-                        top: 30
+                        top: 45,
+                        itemGap: 20
                     },
                     grid: {
                         left: '3%',
                         right: '4%',
                         bottom: '15%',
+                        top: 100,
                         containLabel: true
                     },
                     dataZoom: [
@@ -1139,15 +1354,23 @@
                             type: 'inside',
                             start: 0,
                             end: 100,
+                            minSpan: 1,
+                            maxSpan: 100,
                             zoomOnMouseWheel: true,
-                            moveOnMouseMove: true
+                            moveOnMouseMove: true,
+                            filterMode: 'filter'
                         },
                         {
                             type: 'slider',
                             start: 0,
                             end: 100,
+                            minSpan: 1,
+                            maxSpan: 100,
                             height: 25,
-                            bottom: 50
+                            bottom: 40,
+                            filterMode: 'filter',
+                            showDetail: true,
+                            brushSelect: false
                         }
                     ],
                     xAxis: {
@@ -1218,7 +1441,8 @@
                     title: {
                         text: `${currentChartData.endpoint || ''} - ${currentChartData.counter || ''}`,
                         left: 'center',
-                        textStyle: { fontSize: 16 }
+                        textStyle: { fontSize: 16 },
+                        padding: [15, 10, 25, 10]
                     },
                     tooltip: {
                         trigger: 'axis',
@@ -1232,13 +1456,14 @@
                     },
                     legend: {
                         data: ['正常值', '异常值', '异常分数'],
-                        top: 30
+                        top: 45,
+                        itemGap: 20
                     },
                     grid: [
                         {
                             left: '3%',
                             right: '4%',
-                            top: 80,
+                            top: 100,
                             height: '50%'
                         },
                         {
@@ -1254,16 +1479,24 @@
                             xAxisIndex: [0, 1],
                             start: 0,
                             end: 100,
+                            minSpan: 1,
+                            maxSpan: 100,
                             zoomOnMouseWheel: true,
-                            moveOnMouseMove: true
+                            moveOnMouseMove: true,
+                            filterMode: 'filter'
                         },
                         {
                             type: 'slider',
                             xAxisIndex: [0, 1],
                             start: 0,
                             end: 100,
+                            minSpan: 1,
+                            maxSpan: 100,
                             height: 20,
-                            bottom: 30
+                            bottom: 30,
+                            filterMode: 'filter',
+                            showDetail: true,
+                            brushSelect: false
                         }
                     ],
                     xAxis: [
@@ -1341,7 +1574,7 @@
                 };
             }
 
-            chartInstance.setOption(option);
+            chartInstance.setOption(option, true);
 
             // 响应窗口大小变化
             window.addEventListener('resize', function() {
