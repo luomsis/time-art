@@ -108,13 +108,17 @@ def _run_prediction(time_series, counter, endpoint):
         predictor = ProphetPredictor(params)
         img_base64, metrics = predictor.run(time_series, counter, endpoint)
 
+        # Get raw chart data
+        chart_data = predictor.get_chart_data(counter, endpoint)
+
         return jsonify({
             'success': True,
             'image': img_base64,
             'metrics': metrics,
             'counter': counter,
             'endpoint': endpoint,
-            'type': 'prediction'
+            'type': 'prediction',
+            'chart_data': chart_data
         })
 
     except Exception as e:
@@ -205,6 +209,9 @@ def _run_detection(time_series, counter, endpoint):
         # Get anomaly details
         anomaly_details = detector.get_anomaly_details()
 
+        # Get raw chart data
+        chart_data = detector.get_chart_data(counter, endpoint)
+
         return jsonify({
             'success': True,
             'image': img_base64,
@@ -212,7 +219,8 @@ def _run_detection(time_series, counter, endpoint):
             'anomalies': anomaly_details[:50],  # Limit to 50 anomalies
             'counter': counter,
             'endpoint': endpoint,
-            'type': 'detection'
+            'type': 'detection',
+            'chart_data': chart_data
         })
 
     except Exception as e:

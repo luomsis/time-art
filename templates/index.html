@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>时间序列分析 - 预测与异常检测</title>
+    <!-- ECharts Library - Local file -->
+    <script src="/static/echarts.min.js"></script>
     <style>
         * {
             box-sizing: border-box;
@@ -375,6 +377,105 @@
         .algorithm-specific.show {
             display: block;
         }
+
+        /* Interactive Chart Styles */
+        .chart-view-toggle {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            justify-content: center;
+        }
+
+        .view-toggle-btn {
+            padding: 10px 25px;
+            border: 2px solid #667eea;
+            background: white;
+            color: #667eea;
+            border-radius: 20px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .view-toggle-btn.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .view-toggle-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+        }
+
+        .chart-container {
+            position: relative;
+            margin-bottom: 30px;
+        }
+
+        #interactiveChart {
+            width: 100%;
+            height: 500px;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .time-filter-controls {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            margin-bottom: 15px;
+            padding: 15px;
+            background: #f8f9ff;
+            border-radius: 10px;
+            flex-wrap: wrap;
+        }
+
+        .time-filter-controls label {
+            font-weight: 600;
+            color: #333;
+        }
+
+        .time-filter-controls input {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+
+        .time-filter-controls button {
+            padding: 8px 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        .time-filter-controls button:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+        }
+
+        .time-filter-controls .reset-btn {
+            background: #6c757d;
+        }
+
+        .static-image-container {
+            display: none;
+        }
+
+        .static-image-container.show {
+            display: block;
+        }
+
+        .interactive-chart-container {
+            display: none;
+        }
+
+        .interactive-chart-container.show {
+            display: block;
+        }
     </style>
 </head>
 <body>
@@ -724,8 +825,38 @@
                     <span class="results-type" id="resultsType"></span>
                 </div>
 
-                <div class="results-image">
-                    <img id="resultsImage" alt="分析结果">
+                <!-- 图表视图切换 -->
+                <div class="chart-view-toggle" id="viewToggle" style="display: none;">
+                    <button class="view-toggle-btn active" onclick="switchView('interactive')">
+                        📊 交互式图表
+                    </button>
+                    <button class="view-toggle-btn" onclick="switchView('static')">
+                        🖼️ 静态图片
+                    </button>
+                </div>
+
+                <!-- 时间过滤器 (仅交互式图表) -->
+                <div class="time-filter-controls interactive-chart-container" id="timeFilterControls">
+                    <label>时间范围:</label>
+                    <input type="datetime-local" id="timeStart" step="second">
+                    <span>至</span>
+                    <input type="datetime-local" id="timeEnd" step="second">
+                    <button onclick="applyTimeFilter()">应用筛选</button>
+                    <button class="reset-btn" onclick="resetTimeFilter()">重置</button>
+                </div>
+
+                <!-- 静态图片 -->
+                <div class="static-image-container" id="staticImageContainer">
+                    <div class="results-image">
+                        <img id="resultsImage" alt="分析结果">
+                    </div>
+                </div>
+
+                <!-- 交互式图表 -->
+                <div class="interactive-chart-container" id="interactiveChartContainer">
+                    <div class="chart-container">
+                        <div id="interactiveChart"></div>
+                    </div>
                 </div>
 
                 <h3 style="margin-bottom: 15px; color: #333;">指标</h3>
@@ -742,6 +873,10 @@
     <script>
         let selectedFile = null;
         let selectedType = null;
+        let chartInstance = null;
+        let currentChartData = null;
+        let currentAnalysisType = null;
+        let echartsAvailable = typeof echarts !== 'undefined';
 
         // 文件输入处理
         document.getElementById('fileInput').addEventListener('change', function(e) {
@@ -860,6 +995,11 @@
             const metricsGrid = document.getElementById('metricsGrid');
             const anomaliesSection = document.getElementById('anomaliesSection');
             const anomaliesList = document.getElementById('anomaliesList');
+            const viewToggle = document.getElementById('viewToggle');
+
+            // 保存数据供交互式图表使用
+            currentChartData = result.chart_data;
+            currentAnalysisType = result.type;
 
             // 设置图片
             resultsImage.src = 'data:image/png;base64,' + result.image;
@@ -867,6 +1007,19 @@
             // 设置类型标签
             resultsType.textContent = result.type === 'prediction' ? '预测' : '异常检测';
             resultsType.className = 'results-type ' + result.type;
+
+            // 显示视图切换按钮
+            if (result.chart_data && echartsAvailable) {
+                viewToggle.style.display = 'flex';
+                // 默认显示交互式图表
+                switchView('interactive');
+            } else {
+                viewToggle.style.display = 'none';
+                switchView('static');
+                if (!echartsAvailable && result.chart_data) {
+                    console.warn('ECharts library failed to load. Showing static image only.');
+                }
+            }
 
             // 显示指标
             metricsGrid.innerHTML = '';
@@ -900,6 +1053,348 @@
             }
 
             resultsSection.classList.add('show');
+        }
+
+        // 切换图表视图
+        function switchView(view) {
+            const staticContainer = document.getElementById('staticImageContainer');
+            const interactiveContainer = document.getElementById('interactiveChartContainer');
+            const timeFilterControls = document.getElementById('timeFilterControls');
+            const buttons = document.querySelectorAll('.view-toggle-btn');
+
+            buttons.forEach(btn => btn.classList.remove('active'));
+
+            if (view === 'interactive') {
+                if (!echartsAvailable) {
+                    alert('ECharts 库未加载，请使用静态图片视图');
+                    switchView('static');
+                    return;
+                }
+                staticContainer.classList.remove('show');
+                interactiveContainer.classList.add('show');
+                timeFilterControls.classList.add('show');
+                buttons[0].classList.add('active');
+                renderInteractiveChart();
+            } else {
+                staticContainer.classList.add('show');
+                interactiveContainer.classList.remove('show');
+                timeFilterControls.classList.remove('show');
+                buttons[1].classList.add('active');
+                if (chartInstance) {
+                    chartInstance.dispose();
+                    chartInstance = null;
+                }
+            }
+        }
+
+        // 渲染交互式图表
+        function renderInteractiveChart(filteredData = null) {
+            if (!currentChartData) return;
+            if (!echartsAvailable) {
+                alert('ECharts 库未加载，请使用静态图片视图');
+                return;
+            }
+
+            const data = filteredData || currentChartData;
+            const chartDom = document.getElementById('interactiveChart');
+
+            // 销毁已存在的实例
+            if (chartInstance) {
+                chartInstance.dispose();
+            }
+
+            chartInstance = echarts.init(chartDom);
+
+            let option;
+
+            if (currentAnalysisType === 'prediction') {
+                option = {
+                    title: {
+                        text: `${currentChartData.endpoint || ''} - ${currentChartData.counter || ''}`,
+                        left: 'center',
+                        textStyle: { fontSize: 16 }
+                    },
+                    tooltip: {
+                        trigger: 'axis',
+                        formatter: function(params) {
+                            let result = params[0].axisValueLabel + '<br/>';
+                            params.forEach(param => {
+                                result += `${param.marker} ${param.seriesName}: ${param.value[1]?.toFixed(4) || 'N/A'}<br/>`;
+                            });
+                            return result;
+                        }
+                    },
+                    legend: {
+                        data: ['实际值', '预测值', '置信区间'],
+                        top: 30
+                    },
+                    grid: {
+                        left: '3%',
+                        right: '4%',
+                        bottom: '15%',
+                        containLabel: true
+                    },
+                    dataZoom: [
+                        {
+                            type: 'inside',
+                            start: 0,
+                            end: 100,
+                            zoomOnMouseWheel: true,
+                            moveOnMouseMove: true
+                        },
+                        {
+                            type: 'slider',
+                            start: 0,
+                            end: 100,
+                            height: 25,
+                            bottom: 50
+                        }
+                    ],
+                    xAxis: {
+                        type: 'time',
+                        axisLabel: {
+                            formatter: '{yyyy}-{MM}-{dd}\n{HH}:{mm}'
+                        }
+                    },
+                    yAxis: {
+                        type: 'value',
+                        name: currentChartData.units || '数值'
+                    },
+                    series: [
+                        {
+                            name: '实际值',
+                            type: 'scatter',
+                            data: data.actual,
+                            itemStyle: { color: '#2E86AB' },
+                            symbolSize: 6
+                        },
+                        {
+                            name: '预测值',
+                            type: 'line',
+                            data: data.forecast,
+                            itemStyle: { color: '#A23B72' },
+                            lineStyle: { width: 2 },
+                            showSymbol: false
+                        },
+                        {
+                            name: '置信区间',
+                            type: 'line',
+                            data: data.upper,
+                            lineStyle: { opacity: 0 },
+                            areaStyle: {
+                                color: '#A23B72',
+                                opacity: 0.2
+                            },
+                            stack: 'upper',
+                            showSymbol: false
+                        },
+                        {
+                            name: '置信区间下限',
+                            type: 'line',
+                            data: data.lower,
+                            lineStyle: { opacity: 0 },
+                            areaStyle: {
+                                color: '#A23B72',
+                                opacity: 0.2
+                            },
+                            stack: 'lower',
+                            showSymbol: false
+                        }
+                    ],
+                    markLine: {
+                        symbol: 'none',
+                        data: [
+                            {
+                                xAxis: data.forecast_start,
+                                lineStyle: { color: 'red', type: 'dashed' },
+                                label: { formatter: '预测起点' }
+                            }
+                        ]
+                    }
+                };
+            } else {
+                // 异常检测图表
+                option = {
+                    title: {
+                        text: `${currentChartData.endpoint || ''} - ${currentChartData.counter || ''}`,
+                        left: 'center',
+                        textStyle: { fontSize: 16 }
+                    },
+                    tooltip: {
+                        trigger: 'axis',
+                        formatter: function(params) {
+                            let result = params[0].axisValueLabel + '<br/>';
+                            params.forEach(param => {
+                                result += `${param.marker} ${param.seriesName}: ${param.value[1]?.toFixed(4) || 'N/A'}<br/>`;
+                            });
+                            return result;
+                        }
+                    },
+                    legend: {
+                        data: ['正常值', '异常值', '异常分数'],
+                        top: 30
+                    },
+                    grid: [
+                        {
+                            left: '3%',
+                            right: '4%',
+                            top: 80,
+                            height: '50%'
+                        },
+                        {
+                            left: '3%',
+                            right: '4%',
+                            top: '70%',
+                            height: '20%'
+                        }
+                    ],
+                    dataZoom: [
+                        {
+                            type: 'inside',
+                            xAxisIndex: [0, 1],
+                            start: 0,
+                            end: 100,
+                            zoomOnMouseWheel: true,
+                            moveOnMouseMove: true
+                        },
+                        {
+                            type: 'slider',
+                            xAxisIndex: [0, 1],
+                            start: 0,
+                            end: 100,
+                            height: 20,
+                            bottom: 30
+                        }
+                    ],
+                    xAxis: [
+                        {
+                            type: 'time',
+                            axisLabel: {
+                                formatter: '{yyyy}-{MM}-{dd}\n{HH}:{mm}'
+                            },
+                            gridIndex: 0
+                        },
+                        {
+                            type: 'time',
+                            axisLabel: {
+                                formatter: '{MM}-{dd}\n{HH}:{mm}'
+                            },
+                            gridIndex: 1
+                        }
+                    ],
+                    yAxis: [
+                        {
+                            type: 'value',
+                            name: '数值',
+                            gridIndex: 0
+                        },
+                        {
+                            type: 'value',
+                            name: '异常分数',
+                            gridIndex: 1
+                        }
+                    ],
+                    series: [
+                        {
+                            name: '正常值',
+                            type: 'scatter',
+                            data: data.normal,
+                            itemStyle: { color: '#2E86AB' },
+                            symbolSize: 6,
+                            xAxisIndex: 0,
+                            yAxisIndex: 0
+                        },
+                        {
+                            name: '异常值',
+                            type: 'scatter',
+                            data: data.anomaly,
+                            itemStyle: { color: '#c62828' },
+                            symbolSize: 12,
+                            xAxisIndex: 0,
+                            yAxisIndex: 0
+                        },
+                        {
+                            name: '异常分数',
+                            type: 'line',
+                            data: data.scores,
+                            itemStyle: { color: '#9c27b0' },
+                            lineStyle: { width: 1.5 },
+                            showSymbol: false,
+                            xAxisIndex: 1,
+                            yAxisIndex: 1
+                        }
+                    ],
+                    markLine: [
+                        {
+                            symbol: 'none',
+                            xAxisIndex: 1,
+                            yAxisIndex: 1,
+                            data: [
+                                {
+                                    yAxis: data.threshold,
+                                    lineStyle: { color: 'red', type: 'dashed' },
+                                    label: { formatter: `阈值: ${data.threshold.toFixed(4)}` }
+                                }
+                            ]
+                        }
+                    ]
+                };
+            }
+
+            chartInstance.setOption(option);
+
+            // 响应窗口大小变化
+            window.addEventListener('resize', function() {
+                chartInstance.resize();
+            });
+        }
+
+        // 应用时间筛选
+        function applyTimeFilter() {
+            if (!currentChartData) return;
+
+            const startInput = document.getElementById('timeStart').value;
+            const endInput = document.getElementById('timeEnd').value;
+
+            if (!startInput || !endInput) {
+                alert('请选择开始和结束时间');
+                return;
+            }
+
+            const startTime = new Date(startInput).getTime();
+            const endTime = new Date(endInput).getTime();
+
+            const filteredData = filterDataByTime(currentChartData, startTime, endTime);
+            renderInteractiveChart(filteredData);
+        }
+
+        // 按时间筛选数据
+        function filterDataByTime(data, startTime, endTime) {
+            const filterArray = (arr) => arr.filter(item => item[0] >= startTime && item[0] <= endTime);
+
+            if (currentAnalysisType === 'prediction') {
+                return {
+                    ...data,
+                    actual: filterArray(data.actual),
+                    forecast: filterArray(data.forecast),
+                    upper: filterArray(data.upper),
+                    lower: filterArray(data.lower)
+                };
+            } else {
+                return {
+                    ...data,
+                    normal: filterArray(data.normal),
+                    anomaly: filterArray(data.anomaly),
+                    scores: filterArray(data.scores)
+                };
+            }
+        }
+
+        // 重置时间筛选
+        function resetTimeFilter() {
+            document.getElementById('timeStart').value = '';
+            document.getElementById('timeEnd').value = '';
+            renderInteractiveChart();
         }
 
         function showError(message) {

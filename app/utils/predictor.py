@@ -213,6 +213,41 @@ class ProphetPredictor:
 
         return img_base64, metrics
 
+    def get_chart_data(self, counter: str = '', endpoint: str = '') -> Dict[str, Any]:
+        """Get raw data for interactive chart rendering."""
+        # Convert timestamps to milliseconds for JavaScript
+        actual_data = [
+            [int(ds.timestamp() * 1000), float(y)]
+            for ds, y in zip(self.df['ds'], self.df['y'])
+        ]
+
+        forecast_data = [
+            [int(ds.timestamp() * 1000), float(yhat)]
+            for ds, yhat in zip(self.forecast['ds'], self.forecast['yhat'])
+        ]
+
+        upper_data = [
+            [int(ds.timestamp() * 1000), float(yhat_upper)]
+            for ds, yhat_upper in zip(self.forecast['ds'], self.forecast['yhat_upper'])
+        ]
+
+        lower_data = [
+            [int(ds.timestamp() * 1000), float(yhat_lower)]
+            for ds, yhat_lower in zip(self.forecast['ds'], self.forecast['yhat_lower'])
+        ]
+
+        forecast_start = int(self.df['ds'].max().timestamp() * 1000)
+
+        return {
+            'actual': actual_data,
+            'forecast': forecast_data,
+            'upper': upper_data,
+            'lower': lower_data,
+            'forecast_start': forecast_start,
+            'counter': counter,
+            'endpoint': endpoint
+        }
+
     def _calculate_metrics(self) -> Dict[str, Any]:
         """Calculate prediction metrics."""
         # Merge forecast with original data to get actual values

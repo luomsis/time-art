@@ -403,3 +403,39 @@ class AnomalyDetector:
         anomalies = anomalies.sort_values('score', ascending=False)
 
         return anomalies.to_dict('records')
+
+    def get_chart_data(self, counter: str = '', endpoint: str = '') -> Dict[str, Any]:
+        """Get raw data for interactive chart rendering."""
+        # Convert timestamps to milliseconds for JavaScript
+        normal_data = [
+            [int(dt.timestamp() * 1000), float(val)]
+            for dt, val, pred in zip(self.df['datetime'], self.df['value'], self.predictions)
+            if pred == 0
+        ]
+
+        anomaly_data = [
+            [int(dt.timestamp() * 1000), float(val)]
+            for dt, val, pred in zip(self.df['datetime'], self.df['value'], self.predictions)
+            if pred == 1
+        ]
+
+        # Decision scores
+        scores_data = [
+            [int(dt.timestamp() * 1000), float(score)]
+            for dt, score in zip(self.df['datetime'], self.decision_scores)
+        ]
+
+        # Calculate threshold
+        threshold = float(np.percentile(
+            self.decision_scores,
+            (1 - self.params.get('contamination', 0.1)) * 100
+        ))
+
+        return {
+            'normal': normal_data,
+            'anomaly': anomaly_data,
+            'scores': scores_data,
+            'threshold': threshold,
+            'counter': counter,
+            'endpoint': endpoint
+        }
