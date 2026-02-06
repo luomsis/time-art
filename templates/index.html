@@ -618,6 +618,13 @@
                         <input type="checkbox" name="add_monthly_seasonality" id="monthlySeasonality">
                         <label for="monthlySeasonality" style="margin: 0;">添加月度季节性</label>
                     </div>
+                    <div class="param-group checkbox-group">
+                        <input type="checkbox" name="enforce_non_negative" id="enforceNonNegative" checked>
+                        <label for="enforceNonNegative" style="margin: 0;">
+                            强制非负值
+                            <span class="help-icon">?<span class="help-tooltip">适用于 CPU、内存等非负指标，将负预测值截断为 0</span></span>
+                        </label>
+                    </div>
                 </div>
             </div>
 

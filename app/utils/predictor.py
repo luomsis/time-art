@@ -73,6 +73,12 @@ class ProphetPredictor:
         df = df.sort_values('ds').drop_duplicates(subset=['ds'])
         df = df.reset_index(drop=True)
 
+        # 预处理：对于非负指标（CPU、内存等），将负值设为0
+        if self.params.get('enforce_non_negative', False):
+            df['y'] = df['y'].clip(lower=0)
+            # 添加 floor 列用于 Prophet 约束
+            df['floor'] = 0.0
+
         # Add capacity column for logistic growth
         growth = self.params.get('growth', 'linear')
         if growth == 'logistic':
@@ -107,6 +113,11 @@ class ProphetPredictor:
 
         self.model = Prophet(**model_params)
 
+        # Add floor constraint for non-negative metrics (CPU, memory, etc.)
+        if self.params.get('enforce_non_negative', False):
+            # Set floor to 0 to prevent negative predictions
+            self.model.floor = 0.0
+
         # Add custom seasonality if specified
         if self.params.get('add_monthly_seasonality'):
             self.model.add_seasonality(name='monthly', period=30.5, fourier_order=5)
@@ -135,6 +146,10 @@ class ProphetPredictor:
         # Create future dataframe
         future = self.model.make_future_dataframe(periods=periods, freq='5min')
 
+        # Add floor column for non-negative metrics
+        if self.params.get('enforce_non_negative', False):
+            future['floor'] = 0.0
+
         # Add cap column for logistic growth
         growth = self.params.get('growth', 'linear')
         if growth == 'logistic':
@@ -143,6 +158,13 @@ class ProphetPredictor:
 
         # Make predictions
         self.forecast = self.model.predict(future)
+
+        # 后处理：对于非负指标，将负预测值截断为0
+        if self.params.get('enforce_non_negative', False):
+            self.forecast['yhat'] = self.forecast['yhat'].clip(lower=0)
+            self.forecast['yhat_lower'] = self.forecast['yhat_lower'].clip(lower=0)
+            self.forecast['yhat_upper'] = self.forecast['yhat_upper'].clip(lower=0)
+
         return self.forecast
 
     def generate_plot(self, counter: str, endpoint: str) -> str:
