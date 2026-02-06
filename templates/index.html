@@ -534,7 +534,7 @@
                             <label>预测周期数</label>
                             <span class="help-icon">?<span class="help-tooltip">预测未来多少个时间点</span></span>
                         </div>
-                        <input type="number" name="forecast_periods" value="30" min="1" max="1000">
+                        <input type="number" name="forecast_periods" value="100" min="1" max="1000">
                     </div>
                     <div class="param-group">
                         <div class="param-label-wrapper">
@@ -556,8 +556,8 @@
                             <span class="help-icon">?<span class="help-tooltip">additive(加法)或multiplicative(乘法)季节性</span></span>
                         </div>
                         <select name="seasonality_mode">
-                            <option value="additive" selected>加法</option>
-                            <option value="multiplicative">乘法</option>
+                            <option value="additive">加法</option>
+                            <option value="multiplicative" selected>乘法</option>
                         </select>
                     </div>
                     <div class="param-group">
@@ -565,7 +565,7 @@
                             <label>季节性强度</label>
                             <span class="help-icon">?<span class="help-tooltip">季节性变化的强度，值越大季节性越明显</span></span>
                         </div>
-                        <input type="number" name="seasonality_prior_scale" value="10" min="0" max="50" step="1">
+                        <input type="number" name="seasonality_prior_scale" value="18" min="0" max="50" step="1">
                     </div>
                     <div class="param-group">
                         <div class="param-label-wrapper">
@@ -579,7 +579,7 @@
                             <label>置信区间宽度</label>
                             <span class="help-icon">?<span class="help-tooltip">不确定性区间的宽度范围</span></span>
                         </div>
-                        <input type="number" name="interval_width" value="0.8" min="0" max="1" step="0.05">
+                        <input type="number" name="interval_width" value="0.9" min="0" max="1" step="0.05">
                     </div>
                     <div class="param-group">
                         <div class="param-label-wrapper">
@@ -598,8 +598,8 @@
                             <span class="help-icon">?<span class="help-tooltip">是否启用周季节性模式</span></span>
                         </div>
                         <select name="weekly_seasonality">
-                            <option value="auto" selected>自动</option>
-                            <option value="true">启用</option>
+                            <option value="auto">自动</option>
+                            <option value="true" selected>启用</option>
                             <option value="false">禁用</option>
                         </select>
                     </div>
@@ -609,8 +609,8 @@
                             <span class="help-icon">?<span class="help-tooltip">是否启用日季节性模式</span></span>
                         </div>
                         <select name="daily_seasonality">
-                            <option value="auto" selected>自动</option>
-                            <option value="true">启用</option>
+                            <option value="auto">自动</option>
+                            <option value="true" selected>启用</option>
                             <option value="false">禁用</option>
                         </select>
                     </div>
@@ -1202,33 +1202,58 @@
             let option;
 
             if (currentAnalysisType === 'prediction') {
+                // 找出超出阈值的历史数据点
+                const actualMap = new Map(data.actual.map(p => [p[0], p[1]]));
+                const normalPoints = [];
+                const outlierPoints = [];
+
+                data.actual.forEach(point => {
+                    const timestamp = point[0];
+                    const value = point[1];
+                    // 找到对应的预测上下界
+                    const upperPoint = data.upper.find(p => p[0] === timestamp);
+                    const lowerPoint = data.lower.find(p => p[0] === timestamp);
+                    if (upperPoint && lowerPoint) {
+                        if (value > upperPoint[1] || value < lowerPoint[1]) {
+                            outlierPoints.push(point);
+                        } else {
+                            normalPoints.push(point);
+                        }
+                    } else {
+                        normalPoints.push(point);
+                    }
+                });
+
                 option = {
                     title: {
                         text: `${currentChartData.endpoint || ''} - ${currentChartData.counter || ''}`,
                         left: 'center',
-                        textStyle: { fontSize: 16 },
+                        textStyle: { fontSize: 16, fontWeight: 'bold' },
                         padding: [15, 10, 25, 10]
                     },
                     tooltip: {
                         trigger: 'axis',
                         formatter: function(params) {
-                            let result = params[0].axisValueLabel + '<br/>';
+                            if (!params || params.length === 0) return '';
+                            let result = `<div style="font-weight: bold; margin-bottom: 5px;">${params[0].axisValueLabel}</div>`;
                             params.forEach(param => {
-                                result += `${param.marker} ${param.seriesName}: ${param.value[1]?.toFixed(4) || 'N/A'}<br/>`;
+                                const value = param.value[1] !== undefined ? param.value[1].toFixed(2) : 'N/A';
+                                result += `<div>${param.marker} ${param.seriesName}: <strong>${value}</strong></div>`;
                             });
                             return result;
                         }
                     },
                     legend: {
-                        data: ['实际值', '预测值', '置信区间'],
+                        data: ['正常值', '超出阈值', '预测趋势', '动态阈值上界', '动态阈值下界'],
                         top: 45,
-                        itemGap: 20
+                        itemGap: 25,
+                        textStyle: { fontSize: 13 }
                     },
                     grid: {
                         left: '3%',
                         right: '4%',
                         bottom: '15%',
-                        top: 100,
+                        top: 110,
                         containLabel: true
                     },
                     dataZoom: [
@@ -1258,63 +1283,110 @@
                     xAxis: {
                         type: 'time',
                         axisLabel: {
-                            formatter: '{yyyy}-{MM}-{dd}\n{HH}:{mm}'
+                            formatter: '{MM}-{dd}\n{HH}:{mm}',
+                            fontSize: 11
                         }
                     },
                     yAxis: {
                         type: 'value',
-                        name: currentChartData.units || '数值'
+                        name: currentChartData.units || '数值',
+                        nameTextStyle: { fontSize: 12, fontWeight: 'bold' },
+                        axisLabel: { fontSize: 11 }
                     },
                     series: [
                         {
-                            name: '实际值',
+                            name: '正常值',
                             type: 'scatter',
-                            data: data.actual,
-                            itemStyle: { color: '#2E86AB' },
-                            symbolSize: 6
+                            data: normalPoints,
+                            itemStyle: { color: '#0EA5E9', opacity: 0.7 },
+                            symbolSize: 5,
+                            zlevel: 2,
+                            emphasis: { disabled: true }
                         },
                         {
-                            name: '预测值',
+                            name: '超出阈值',
+                            type: 'scatter',
+                            data: outlierPoints,
+                            itemStyle: {
+                                color: '#EF4444',
+                                borderColor: '#FEE2E2',
+                                borderWidth: 2
+                            },
+                            symbolSize: 12,
+                            zlevel: 3,
+                            emphasis: { disabled: true }
+                        },
+                        {
+                            name: '动态阈值下界',
                             type: 'line',
-                            data: data.forecast,
-                            itemStyle: { color: '#A23B72' },
-                            lineStyle: { width: 2 },
-                            showSymbol: false
+                            data: data.lower,
+                            itemStyle: { color: '#F59E0B' },
+                            lineStyle: { width: 1.5, type: 'dashed', opacity: 0.7 },
+                            showSymbol: false,
+                            zlevel: 1,
+                            emphasis: { disabled: true }
                         },
                         {
-                            name: '置信区间',
+                            name: '动态阈值区间',
                             type: 'line',
                             data: data.upper,
                             lineStyle: { opacity: 0 },
                             areaStyle: {
-                                color: '#A23B72',
-                                opacity: 0.2
+                                color: '#F59E0B',
+                                opacity: 0.15
                             },
-                            stack: 'upper',
-                            showSymbol: false
+                            stack: 'confidence-band',
+                            showSymbol: false,
+                            zlevel: 0,
+                            emphasis: { disabled: true }
                         },
                         {
-                            name: '置信区间下限',
+                            name: '动态阈值上界',
                             type: 'line',
-                            data: data.lower,
-                            lineStyle: { opacity: 0 },
-                            areaStyle: {
-                                color: '#A23B72',
-                                opacity: 0.2
-                            },
-                            stack: 'lower',
-                            showSymbol: false
+                            data: data.upper,
+                            itemStyle: { color: '#F59E0B' },
+                            lineStyle: { width: 1.5, type: 'dashed', opacity: 0.7 },
+                            showSymbol: false,
+                            zlevel: 1,
+                            emphasis: { disabled: true }
+                        },
+                        {
+                            name: '预测趋势',
+                            type: 'line',
+                            data: data.forecast,
+                            itemStyle: { color: '#7C3AED' },
+                            lineStyle: { width: 3 },
+                            showSymbol: false,
+                            zlevel: 2,
+                            emphasis: { disabled: true }
                         }
                     ],
                     markLine: {
                         symbol: 'none',
+                        zlevel: 0,
                         data: [
                             {
                                 xAxis: data.forecast_start,
-                                lineStyle: { color: 'red', type: 'dashed' },
-                                label: { formatter: '预测起点' }
+                                lineStyle: { color: '#6366F1', type: 'solid', width: 2 },
+                                label: {
+                                    formatter: '预测起点',
+                                    position: 'end',
+                                    fontSize: 12,
+                                    fontWeight: 'bold'
+                                }
                             }
                         ]
+                    },
+                    markArea: {
+                        silent: true,
+                        itemStyle: {
+                            color: '#6366F1',
+                            opacity: 0.03
+                        },
+                        data: [[
+                            { xAxis: data.forecast_start },
+                            { xAxis: data.forecast[data.forecast.length - 1][0] }
+                        ]]
                     }
                 };
             } else {
@@ -1417,7 +1489,8 @@
                             itemStyle: { color: '#2E86AB' },
                             symbolSize: 6,
                             xAxisIndex: 0,
-                            yAxisIndex: 0
+                            yAxisIndex: 0,
+                            emphasis: { disabled: true }
                         },
                         {
                             name: '异常值',
@@ -1426,7 +1499,8 @@
                             itemStyle: { color: '#c62828' },
                             symbolSize: 12,
                             xAxisIndex: 0,
-                            yAxisIndex: 0
+                            yAxisIndex: 0,
+                            emphasis: { disabled: true }
                         },
                         {
                             name: '异常分数',
@@ -1436,7 +1510,8 @@
                             lineStyle: { width: 1.5 },
                             showSymbol: false,
                             xAxisIndex: 1,
-                            yAxisIndex: 1
+                            yAxisIndex: 1,
+                            emphasis: { disabled: true }
                         }
                     ],
                     markLine: [
@@ -1458,10 +1533,88 @@
 
             chartInstance.setOption(option, true);
 
+            // 监听图表范围变化，同步更新时间过滤器
+            chartInstance.on('dataZoom', function(params) {
+                updateTimeFilterFromChart();
+            });
+
+            // 初始化时更新时间过滤器
+            updateTimeFilterFromChart();
+
             // 响应窗口大小变化
             window.addEventListener('resize', function() {
                 chartInstance.resize();
             });
+        }
+
+        // 从图表当前范围更新时间过滤器
+        function updateTimeFilterFromChart() {
+            if (!chartInstance || !currentChartData) return;
+
+            // 直接从 ECharts axis 获取实际显示的时间范围
+            const option = chartInstance.getOption();
+            const xAxis = option.xAxis[0];
+
+            // 获取 axis 的 min 和 max 值
+            let currentStart, currentEnd;
+
+            if (xAxis.min != null && xAxis.max != null) {
+                // axis 有明确的 min/max 值
+                currentStart = xAxis.min;
+                currentEnd = xAxis.max;
+            } else {
+                // 从 axis 的 range 获取
+                const axisModel = chartInstance.getModel().getComponent('xAxis', 0);
+                const axis = axisModel.axis;
+                if (axis && axis.range) {
+                    currentStart = axis.range[0];
+                    currentEnd = axis.range[1];
+                } else {
+                    // 回退方案：从 dataZoom 计算
+                    const dataZoomModel = chartInstance.getModel().getComponent('dataZoom', 0);
+                    const startPercent = dataZoomModel.option.start || 0;
+                    const endPercent = dataZoomModel.option.end || 100;
+
+                    // 获取所有数据点的时间范围（包括预测数据）
+                    let allDataPoints = [];
+
+                    if (currentAnalysisType === 'prediction') {
+                        // 预测图表：合并 actual 和 forecast 数据
+                        allDataPoints = [
+                            ...(currentChartData.actual || []),
+                            ...(currentChartData.forecast || [])
+                        ];
+                    } else {
+                        // 异常检测图表
+                        allDataPoints = currentChartData.normal || [];
+                    }
+
+                    if (allDataPoints.length === 0) return;
+
+                    const minTime = Math.min(...allDataPoints.map(p => p[0]));
+                    const maxTime = Math.max(...allDataPoints.map(p => p[0]));
+                    const timeSpan = maxTime - minTime;
+
+                    currentStart = minTime + timeSpan * (startPercent / 100);
+                    currentEnd = minTime + timeSpan * (endPercent / 100);
+                }
+            }
+
+            // 转换为 datetime-local 格式 (YYYY-MM-DDTHH:mm)
+            const startDate = new Date(currentStart);
+            const endDate = new Date(currentEnd);
+
+            const formatDateForInput = (date) => {
+                const year = date.getFullYear();
+                const month = String(date.getMonth() + 1).padStart(2, '0');
+                const day = String(date.getDate()).padStart(2, '0');
+                const hours = String(date.getHours()).padStart(2, '0');
+                const minutes = String(date.getMinutes()).padStart(2, '0');
+                return `${year}-${month}-${day}T${hours}:${minutes}`;
+            };
+
+            document.getElementById('timeStart').value = formatDateForInput(startDate);
+            document.getElementById('timeEnd').value = formatDateForInput(endDate);
         }
 
         // 应用时间筛选

@@ -1,15 +1,27 @@
-"""Anomaly detection module using PyOD."""
+"""PyOD 异常检测模块。
+
+实现基于 PyOD 的时间序列异常检测功能，支持 9 种算法:
+- IForest (孤立森林)
+- LOF (局部离群因子)
+- OCSVM (单类 SVM)
+- KNN (K 近邻)
+- ABOD (基于角度的异常检测)
+- CBLOF (基于聚类的 LOF)
+- HBOS (直方图异常检测)
+- MCD (最小协方差行列式)
+- SOD (随机子空间方法)
+"""
 
 import io
 import base64
 from typing import Dict, Any, List, Tuple
 
 import matplotlib
-matplotlib.use('Agg')
+matplotlib.use('Agg')  # 使用非交互式后端
 
-# Configure Chinese font
+# 配置中文字体支持
 import matplotlib.pyplot as plt
-# Font priority: macOS fonts -> Windows fonts -> Linux/CentOS fonts
+# 字体优先级: macOS -> Windows -> Linux/CentOS
 plt.rcParams['font.sans-serif'] = [
     'Arial Unicode MS', 'PingFang SC', 'STHeiti',  # macOS
     'SimHei', 'Microsoft YaHei',  # Windows
@@ -17,7 +29,7 @@ plt.rcParams['font.sans-serif'] = [
     'Noto Sans CJK SC', 'Noto Sans CJK',  # Linux/CentOS noto
     'DejaVu Sans'  # Fallback
 ]
-plt.rcParams['axes.unicode_minus'] = False  # Fix minus sign display
+plt.rcParams['axes.unicode_minus'] = False  # 修复负号显示
 
 import pandas as pd
 import numpy as np
@@ -34,9 +46,17 @@ from pyod.models.sod import SOD
 
 
 class AnomalyDetector:
-    """Anomaly detector using PyOD."""
+    """基于 PyOD 的异常检测器。
 
-    # Available algorithms
+    支持功能:
+    - 9 种异常检测算法
+    - 时间特征工程
+    - 滞后特征生成
+    - 滚动统计特征
+    - 交互式图表数据输出
+    """
+
+    # 可用算法映射
     ALGORITHMS = {
         'iforest': IForest,
         'lof': LOF,
@@ -50,11 +70,16 @@ class AnomalyDetector:
     }
 
     def __init__(self, params: Dict[str, Any]):
-        """
-        Initialize anomaly detector with parameters.
+        """初始化异常检测器。
 
         Args:
-            params: Dictionary containing detection parameters
+            params: 检测参数字典，包含:
+                - algorithm: 算法名称
+                - contamination: 异常比例
+                - use_time_features: 是否使用时间特征
+                - use_lag_features: 是否使用滞后特征
+                - rolling_window: 滚动窗口大小
+                - n_lags: 滞后阶数
         """
         self.params = params
         self.model = None

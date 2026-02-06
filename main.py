@@ -1,4 +1,10 @@
-"""Flask web application for time series analysis."""
+"""Flask web application for time series analysis.
+
+支持 Prophet 预测和 PyOD 异常检测的 Web 服务。
+- 端口: 9999
+- 最大文件上传: 16MB
+- 支持格式: JSON
+"""
 
 import json
 import os
@@ -18,22 +24,27 @@ app.config['ALLOWED_EXTENSIONS'] = {'json'}
 
 
 def allowed_file(filename):
-    """Check if file has allowed extension."""
+    """检查文件扩展名是否允许。"""
     return '.' in filename and \
            filename.rsplit('.', 1)[1].lower() in app.config['ALLOWED_EXTENSIONS']
 
 
 @app.route('/')
 def index():
-    """Render main page."""
+    """渲染主页面。"""
     return render_template('index.html')
 
 
 @app.route('/analyze', methods=['POST'])
 def analyze():
-    """Handle time series analysis request."""
+    """处理时间序列分析请求。
+
+    支持两种分析类型:
+    - prediction: Prophet 预测
+    - detection: PyOD 异常检测
+    """
     try:
-        # Check if file is present
+        # 检查文件是否存在
         if 'file' not in request.files:
             return jsonify({'error': 'No file provided'}), 400
 
@@ -44,7 +55,7 @@ def analyze():
         if not allowed_file(file.filename):
             return jsonify({'error': 'Invalid file type. Please upload a JSON file.'}), 400
 
-        # Read and parse JSON
+        # 读取并解析 JSON
         try:
             content = file.read().decode('utf-8')
             data = json.loads(content)
@@ -53,7 +64,7 @@ def analyze():
         except Exception as e:
             return jsonify({'error': f'Error reading file: {str(e)}'}), 400
 
-        # Validate JSON structure
+        # 验证 JSON 结构
         if 'series' not in data or not data['series']:
             return jsonify({'error': 'Invalid JSON format: "series" field is required'}), 400
 
@@ -65,7 +76,7 @@ def analyze():
         endpoint = series_data.get('endpoint', 'unknown')
         time_series = series_data['data']
 
-        # Get analysis type
+        # 获取分析类型
         analysis_type = request.form.get('analysis_type', 'prediction')
 
         if analysis_type == 'prediction':
@@ -78,9 +89,18 @@ def analyze():
 
 
 def _run_prediction(time_series, counter, endpoint):
-    """Run Prophet prediction."""
+    """运行 Prophet 预测。
+
+    Args:
+        time_series: 时间序列数据 [[timestamp, value], ...]
+        counter: 指标名称
+        endpoint: 端点名称
+
+    Returns:
+        JSON 响应，包含预测结果、图表数据和指标
+    """
     try:
-        # Get Prophet parameters
+        # 获取 Prophet 参数
         params = {
             'growth': request.form.get('growth', 'linear'),
             'n_changepoints': int(request.form.get('n_changepoints', 25)),
@@ -96,7 +116,7 @@ def _run_prediction(time_series, counter, endpoint):
             'add_monthly_seasonality': request.form.get('add_monthly_seasonality') == 'true',
         }
 
-        # Handle boolean values for seasonality
+        # 处理季节性布尔值
         for key in ['yearly_seasonality', 'weekly_seasonality', 'daily_seasonality']:
             val = params[key]
             if val == 'true':
@@ -104,11 +124,11 @@ def _run_prediction(time_series, counter, endpoint):
             elif val == 'false':
                 params[key] = False
 
-        # Run prediction
+        # 运行预测
         predictor = ProphetPredictor(params)
         img_base64, metrics = predictor.run(time_series, counter, endpoint)
 
-        # Get raw chart data
+        # 获取交互式图表数据
         chart_data = predictor.get_chart_data(counter, endpoint)
 
         return jsonify({
@@ -126,9 +146,18 @@ def _run_prediction(time_series, counter, endpoint):
 
 
 def _run_detection(time_series, counter, endpoint):
-    """Run anomaly detection using PyOD."""
+    """运行 PyOD 异常检测。
+
+    Args:
+        time_series: 时间序列数据 [[timestamp, value], ...]
+        counter: 指标名称
+        endpoint: 端点名称
+
+    Returns:
+        JSON 响应，包含检测结果、异常详情和图表数据
+    """
     try:
-        # Get detection parameters
+        # 获取检测参数
         params = {
             'algorithm': request.form.get('algorithm', 'iforest'),
             'contamination': float(request.form.get('contamination', 0.1)),
@@ -138,7 +167,7 @@ def _run_detection(time_series, counter, endpoint):
             'rolling_window': int(request.form.get('rolling_window', 5)),
         }
 
-        # Algorithm-specific parameters
+        # 算法特定参数
         algorithm = params['algorithm']
 
         if algorithm == 'iforest':
@@ -202,21 +231,21 @@ def _run_detection(time_series, counter, endpoint):
                 'alpha': float(request.form.get('sod_alpha', 0.8)),
             })
 
-        # Run detection
+        # 运行检测
         detector = AnomalyDetector(params)
         img_base64, metrics = detector.run(time_series, counter, endpoint)
 
-        # Get anomaly details
+        # 获取异常详情
         anomaly_details = detector.get_anomaly_details()
 
-        # Get raw chart data
+        # 获取交互式图表数据
         chart_data = detector.get_chart_data(counter, endpoint)
 
         return jsonify({
             'success': True,
             'image': img_base64,
             'metrics': metrics,
-            'anomalies': anomaly_details[:50],  # Limit to 50 anomalies
+            'anomalies': anomaly_details[:50],  # 限制返回 50 条异常
             'counter': counter,
             'endpoint': endpoint,
             'type': 'detection',
@@ -229,7 +258,7 @@ def _run_detection(time_series, counter, endpoint):
 
 @app.route('/algorithms')
 def get_algorithms():
-    """Get list of available anomaly detection algorithms."""
+    """获取可用的异常检测算法列表。"""
     return jsonify({
         'algorithms': list(AnomalyDetector.ALGORITHMS.keys())
     })

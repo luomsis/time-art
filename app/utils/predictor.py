@@ -1,4 +1,11 @@
-"""Prophet time series prediction module."""
+"""Prophet 时间序列预测模块。
+
+实现基于 Facebook Prophet 的时间序列预测功能，支持:
+- 趋势预测 (linear/logistic/flat)
+- 多级季节性 (日/周/月/年)
+- 动态阈值 (置信区间)
+- 异常点检测 (超出阈值的历史数据)
+"""
 
 import io
 import base64
@@ -6,11 +13,11 @@ from datetime import datetime
 from typing import Dict, Any, List, Tuple
 
 import matplotlib
-matplotlib.use('Agg')
+matplotlib.use('Agg')  # 使用非交互式后端
 
-# Configure Chinese font
+# 配置中文字体支持
 import matplotlib.pyplot as plt
-# Font priority: macOS fonts -> Windows fonts -> Linux/CentOS fonts
+# 字体优先级: macOS -> Windows -> Linux/CentOS
 plt.rcParams['font.sans-serif'] = [
     'Arial Unicode MS', 'PingFang SC', 'STHeiti',  # macOS
     'SimHei', 'Microsoft YaHei',  # Windows
@@ -18,7 +25,7 @@ plt.rcParams['font.sans-serif'] = [
     'Noto Sans CJK SC', 'Noto Sans CJK',  # Linux/CentOS noto
     'DejaVu Sans'  # Fallback
 ]
-plt.rcParams['axes.unicode_minus'] = False  # Fix minus sign display
+plt.rcParams['axes.unicode_minus'] = False  # 修复负号显示
 
 import pandas as pd
 import numpy as np
@@ -27,14 +34,25 @@ from matplotlib.dates import DateFormatter
 
 
 class ProphetPredictor:
-    """Time series predictor using Prophet."""
+    """基于 Prophet 的时间序列预测器。
+
+    支持功能:
+    - 时间序列预测与拟合
+    - 动态阈值区间 (置信区间)
+    - 历史异常点检测
+    - 交互式图表数据输出
+    """
 
     def __init__(self, params: Dict[str, Any]):
-        """
-        Initialize Prophet predictor with parameters.
+        """初始化 Prophet 预测器。
 
         Args:
-            params: Dictionary containing Prophet parameters
+            params: Prophet 参数字典，包含:
+                - growth: 增长类型 (linear/logistic/flat)
+                - seasonality_mode: 季节性模式 (additive/multiplicative)
+                - seasonality_prior_scale: 季节性强度
+                - interval_width: 置信区间宽度
+                - daily/weekly/yearly_seasonality: 季节性开关
         """
         self.params = params
         self.model = None
@@ -42,11 +60,10 @@ class ProphetPredictor:
         self.forecast = None
 
     def prepare_data(self, data: List[List[float]]) -> pd.DataFrame:
-        """
-        Prepare data for Prophet model.
+        """准备 Prophet 模型所需的数据格式。
 
         Args:
-            data: List of [timestamp, value] pairs
+            data: [[timestamp_ms, value], ...] 格式的时间序列数据
 
         Returns:
             DataFrame with 'ds' and 'y' columns (and 'cap' for logistic growth)
@@ -139,43 +156,77 @@ class ProphetPredictor:
         Returns:
             Base64 encoded image string
         """
-        fig, ax = plt.subplots(figsize=(14, 7))
+        fig, ax = plt.subplots(figsize=(16, 8))
 
-        # Plot actual values from original data
-        ax.plot(self.df['ds'], self.df['y'], 'o', label='实际值',
-                markersize=4, alpha=0.7, color='#2E86AB')
-
-        # Plot predicted values (fitted + forecast)
-        ax.plot(self.forecast['ds'], self.forecast['yhat'], '-',
-                label='预测值', linewidth=2, color='#A23B72')
-
-        # Plot uncertainty interval
+        # Plot confidence interval (uncertainty band) - draw first to be behind other elements
         ax.fill_between(self.forecast['ds'],
                         self.forecast['yhat_lower'],
                         self.forecast['yhat_upper'],
-                        alpha=0.2, color='#A23B72', label='置信区间')
+                        alpha=0.25, color='#F59E0B',
+                        label=f'动态阈值区间 ({int(self.params.get("interval_width", 0.8)*100)}% 置信度)')
 
-        # Mark the forecast start point
+        # Plot threshold lines for better visibility
+        ax.plot(self.forecast['ds'], self.forecast['yhat_upper'],
+                '-', linewidth=1, alpha=0.5, color='#F59E0B',
+                linestyle='--', label='_nolegend_')
+        ax.plot(self.forecast['ds'], self.forecast['yhat_lower'],
+                '-', linewidth=1, alpha=0.5, color='#F59E0B',
+                linestyle='--', label='_nolegend_')
+
+        # Plot predicted values (fitted + forecast)
+        ax.plot(self.forecast['ds'], self.forecast['yhat'], '-',
+                label='预测趋势', linewidth=2.5, color='#7C3AED')
+
+        # Plot actual values from original data
+        ax.plot(self.df['ds'], self.df['y'], 'o', label='实际值',
+                markersize=3, alpha=0.6, color='#0EA5E9', markeredgecolor='white',
+                markeredgewidth=0.5)
+
+        # Mark points that exceed the threshold (anomalies in historical data)
+        historical_forecast = self.forecast[self.forecast['ds'] <= self.df['ds'].max()]
+        outliers = self.df[(self.df['y'] > historical_forecast['yhat_upper'].values[:len(self.df)]) |
+                          (self.df['y'] < historical_forecast['yhat_lower'].values[:len(self.df)])]
+        if len(outliers) > 0:
+            ax.scatter(outliers['ds'], outliers['y'], s=80,
+                      facecolors='none', edgecolors='#EF4444',
+                      linewidths=2, label='超出阈值', zorder=5)
+
+        # Mark the forecast start point with a styled vertical line
         forecast_start = self.df['ds'].max()
-        ax.axvline(x=forecast_start, color='red', linestyle='--',
-                   alpha=0.5, label='预测起点')
+        ax.axvline(x=forecast_start, color='#6366F1', linestyle='-',
+                   alpha=0.7, linewidth=2, label='预测起点')
 
-        ax.set_xlabel('时间', fontsize=12)
-        ax.set_ylabel('数值', fontsize=12)
-        ax.set_title(f'时间序列预测\n{endpoint} - {counter}',
-                     fontsize=14, fontweight='bold')
-        ax.legend(loc='best', fontsize=10)
-        ax.grid(True, alpha=0.3)
+        # Add shaded region for forecast period
+        ax.axvspan(forecast_start, self.forecast['ds'].max(),
+                  alpha=0.05, color='#6366F1')
+
+        ax.set_xlabel('时间', fontsize=13, fontweight='medium')
+        ax.set_ylabel('数值', fontsize=13, fontweight='medium')
+        ax.set_title(f'Prophet 动态阈值预测\n{endpoint} - {counter}',
+                     fontsize=16, fontweight='bold', pad=20)
+
+        # Enhanced legend
+        ax.legend(loc='upper left', fontsize=11, framealpha=0.95,
+                 shadow=True, fancybox=True, borderpad=0.8)
+
+        # Enhanced grid
+        ax.grid(True, alpha=0.25, linestyle='-', linewidth=0.5)
+        ax.set_axisbelow(True)
+
+        # Light background
+        ax.set_facecolor('#FAFAFA')
+        fig.patch.set_facecolor('#FFFFFF')
 
         # Format x-axis
-        ax.xaxis.set_major_formatter(DateFormatter('%Y-%m-%d %H:%M'))
-        plt.xticks(rotation=45)
+        ax.xaxis.set_major_formatter(DateFormatter('%m-%d %H:%M'))
+        plt.xticks(rotation=30, ha='right')
 
         plt.tight_layout()
 
-        # Convert to base64
+        # Convert to base64 with higher quality
         buf = io.BytesIO()
-        plt.savefig(buf, format='png', dpi=100)
+        plt.savefig(buf, format='png', dpi=120, bbox_inches='tight',
+                   facecolor=fig.get_facecolor())
         buf.seek(0)
         img_base64 = base64.b64encode(buf.read()).decode('utf-8')
         plt.close(fig)
