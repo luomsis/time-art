@@ -181,12 +181,6 @@
             border-color: #667eea;
         }
 
-        .param-group .hint {
-            font-size: 12px;
-            color: #888;
-            margin-top: 5px;
-        }
-
         .checkbox-group {
             display: flex;
             align-items: center;
@@ -455,10 +449,14 @@
             transform: translateX(-50%);
             background: #333;
             color: white;
-            padding: 8px 12px;
+            padding: 10px 14px;
             border-radius: 6px;
             font-size: 12px;
-            white-space: nowrap;
+            line-height: 1.5;
+            white-space: normal;
+            min-width: 150px;
+            max-width: 600px;
+            width: max-content;
             opacity: 0;
             visibility: hidden;
             transition: all 0.2s;
@@ -521,7 +519,7 @@
                     <div class="param-group">
                         <div class="param-label-wrapper">
                             <label>增长类型</label>
-                            <span class="help-icon">?<span class="help-tooltip">预测增长趋势类型：linear(线性)、logistic(饱和生长)、flat(平坦)</span></span>
+                            <span class="help-icon">?<span class="help-tooltip" data-tooltip="指定时间序列的增长趋势类型。<br>取值: linear(持续增长) | logistic(饱和生长) | flat(平稳)<br>场景:<br>linear-用户增长/收入预测<br>logistic-市场饱和/资源受限<br>flat-温度/平稳波动"></span></span>
                         </div>
                         <select name="growth">
                             <option value="linear" selected>linear</option>
@@ -532,28 +530,28 @@
                     <div class="param-group">
                         <div class="param-label-wrapper">
                             <label>预测周期数</label>
-                            <span class="help-icon">?<span class="help-tooltip">预测未来多少个时间点</span></span>
+                            <span class="help-icon">?<span class="help-tooltip" data-tooltip="指定要预测的未来时间点数量。<br>取值范围: 1~1000<br>【低】1-50: 短期预测(几小时到1天),精度高<br>【中】50-200: 中期预测(1-7天),平衡精度<br>【高】200-1000: 长期预测(数周至数月),不确定性较大"></span></span>
                         </div>
                         <input type="number" name="forecast_periods" value="100" min="1" max="1000">
                     </div>
                     <div class="param-group">
                         <div class="param-label-wrapper">
                             <label>变点数量</label>
-                            <span class="help-icon">?<span class="help-tooltip">趋势变化点的最大数量，值越大越灵活</span></span>
+                            <span class="help-icon">?<span class="help-tooltip" data-tooltip="趋势变化点的最大数量，控制模型对趋势变化的敏感度。<br>取值范围: 0~100<br>【低】0-10: 趋势稳定,保守<br>【中】15-25: 适中灵活性,默认推荐<br>【高】30-100: 高度灵活,可能过拟合"></span></span>
                         </div>
                         <input type="number" name="n_changepoints" value="25" min="0" max="100">
                     </div>
                     <div class="param-group">
                         <div class="param-label-wrapper">
                             <label>变点范围</label>
-                            <span class="help-icon">?<span class="help-tooltip">变点可能出现在历史数据的比例范围</span></span>
+                            <span class="help-icon">?<span class="help-tooltip" data-tooltip="变点可能出现在历史数据的哪个比例范围内。<br>取值范围: 0.0~1.0<br>【低】0.5-0.7: 更保守<br>【中】0.8-0.9: 默认推荐<br>【高】0.95-1.0: 更敏感"></span></span>
                         </div>
                         <input type="number" name="changepoint_range" value="0.8" min="0" max="1" step="0.05">
                     </div>
                     <div class="param-group">
                         <div class="param-label-wrapper">
                             <label>季节性模式</label>
-                            <span class="help-icon">?<span class="help-tooltip">additive(加法)或multiplicative(乘法)季节性</span></span>
+                            <span class="help-icon">?<span class="help-tooltip" data-tooltip="季节性效应与趋势的组合方式。<br>取值: additive | multiplicative<br>场景:<br>additive-稳定波动(如温度)<br>multiplicative-增长型数据(如销售/访问量)"></span></span>
                         </div>
                         <select name="seasonality_mode">
                             <option value="additive">加法</option>
@@ -563,28 +561,28 @@
                     <div class="param-group">
                         <div class="param-label-wrapper">
                             <label>季节性强度</label>
-                            <span class="help-icon">?<span class="help-tooltip">季节性变化的强度，值越大季节性越明显</span></span>
+                            <span class="help-icon">?<span class="help-tooltip" data-tooltip="控制季节性效应的强度，值越大季节性波动越明显。<br>取值范围: 0~50<br>【低】0-5: 弱季节性<br>【中】10-20: 适中,默认推荐<br>【高】25-50: 强季节性"></span></span>
                         </div>
                         <input type="number" name="seasonality_prior_scale" value="18" min="0" max="50" step="1">
                     </div>
                     <div class="param-group">
                         <div class="param-label-wrapper">
                             <label>变点灵活性</label>
-                            <span class="help-icon">?<span class="help-tooltip">趋势变化灵活性，值越大变化越剧烈</span></span>
+                            <span class="help-icon">?<span class="help-tooltip" data-tooltip="控制趋势变化点的灵活性，值越大允许变化越剧烈。<br>取值范围: 0.0~1.0<br>【低】0.001-0.01: 保守<br>【中】0.05-0.1: 默认推荐<br>【高】0.2-1.0: 灵活,可能过拟合"></span></span>
                         </div>
                         <input type="number" name="changepoint_prior_scale" value="0.05" min="0" max="1" step="0.01">
                     </div>
                     <div class="param-group">
                         <div class="param-label-wrapper">
                             <label>置信区间宽度</label>
-                            <span class="help-icon">?<span class="help-tooltip">不确定性区间的宽度范围</span></span>
+                            <span class="help-icon">?<span class="help-tooltip" data-tooltip="预测不确定性区间的宽度，表示预测的可信程度。<br>取值范围: 0.0~1.0<br>【低】0.68: 68%置信区间,区间较窄<br>【中】0.80: 80%置信区间,平衡<br>【高】0.90-0.95: 90-95%置信区间,默认0.90"></span></span>
                         </div>
                         <input type="number" name="interval_width" value="0.9" min="0" max="1" step="0.05">
                     </div>
                     <div class="param-group">
                         <div class="param-label-wrapper">
                             <label>年度季节性</label>
-                            <span class="help-icon">?<span class="help-tooltip">是否启用年度季节性模式</span></span>
+                            <span class="help-icon">?<span class="help-tooltip" data-tooltip="是否启用年度季节性模式（365天周期）。<br>取值: auto | true | false<br>auto-需至少2年数据<br>true-强制启用<br>false-数据&lt;1年或无年度规律"></span></span>
                         </div>
                         <select name="yearly_seasonality">
                             <option value="auto" selected>自动</option>
@@ -595,7 +593,7 @@
                     <div class="param-group">
                         <div class="param-label-wrapper">
                             <label>周季节性</label>
-                            <span class="help-icon">?<span class="help-tooltip">是否启用周季节性模式</span></span>
+                            <span class="help-icon">?<span class="help-tooltip" data-tooltip="是否启用周季节性模式（7天周期）。<br>取值: auto | true | false<br>auto-需至少2周数据<br>true-工作日/周末差异明显<br>false-无周规律"></span></span>
                         </div>
                         <select name="weekly_seasonality">
                             <option value="auto">自动</option>
@@ -606,7 +604,7 @@
                     <div class="param-group">
                         <div class="param-label-wrapper">
                             <label>日季节性</label>
-                            <span class="help-icon">?<span class="help-tooltip">是否启用日季节性模式</span></span>
+                            <span class="help-icon">?<span class="help-tooltip" data-tooltip="是否启用日季节性模式（24小时周期）。<br>取值: auto | true | false<br>auto-需至少2天数据<br>true-白天/夜间差异明显<br>false-采样间隔&gt;1天"></span></span>
                         </div>
                         <select name="daily_seasonality">
                             <option value="auto">自动</option>
@@ -616,13 +614,16 @@
                     </div>
                     <div class="param-group checkbox-group">
                         <input type="checkbox" name="add_monthly_seasonality" id="monthlySeasonality">
-                        <label for="monthlySeasonality" style="margin: 0;">添加月度季节性</label>
+                        <label for="monthlySeasonality" style="margin: 0;">
+                            添加月度季节性
+                            <span class="help-icon">?<span class="help-tooltip" data-tooltip="是否启用月度季节性模式（30.5天周期）。<br>适用: 月初/月末效应、账单周期<br>注意: 增加复杂度,仅在确有月度规律时使用"></span></span>
+                        </label>
                     </div>
                     <div class="param-group checkbox-group">
                         <input type="checkbox" name="enforce_non_negative" id="enforceNonNegative" checked>
                         <label for="enforceNonNegative" style="margin: 0;">
                             强制非负值
-                            <span class="help-icon">?<span class="help-tooltip">适用于 CPU、内存等非负指标，将负预测值截断为 0</span></span>
+                            <span class="help-icon">?<span class="help-tooltip" data-tooltip="强制预测值和非负，适用于不可能为负的指标。<br>适用: CPU、内存、请求数、销售等<br>作用: 负预测值截断为0"></span></span>
                         </label>
                     </div>
                 </div>
@@ -635,7 +636,7 @@
                     <div class="param-group">
                         <div class="param-label-wrapper">
                             <label>算法</label>
-                            <span class="help-icon">?<span class="help-tooltip">选择异常检测算法</span></span>
+                            <span class="help-icon">?<span class="help-tooltip" data-tooltip="选择异常检测算法，不同算法适用于不同场景。<br>IForest-通用高效,大规模数据<br>LOF-局部密度差异大<br>OCSVM-高维数据,边界清晰<br>KNN-简单直观,低维数据<br>HBOS-极快速度,实时检测<br>ABOD-角度分布异常<br>CBLOF-聚类明显<br>MCD-多元高斯分布<br>SOD-高维子空间异常"></span></span>
                         </div>
                         <select name="algorithm" id="algorithmSelect" onchange="updateAlgorithmParams()">
                             <option value="iforest" selected>孤立森林 (IForest)</option>
@@ -652,31 +653,37 @@
                     <div class="param-group">
                         <div class="param-label-wrapper">
                             <label>异常比例</label>
-                            <span class="help-icon">?<span class="help-tooltip">预期异常值在数据中的比例</span></span>
+                            <span class="help-icon">?<span class="help-tooltip" data-tooltip="预期异常值在数据集中的比例，直接影响阈值设定。<br>取值范围: 0.01~0.5<br>【极低】0.01-0.05: 稳定系统<br>【低】0.05-0.1: 监控关键指标,默认推荐<br>【中】0.1-0.2: 波动较大<br>【高】0.2-0.5: 探索性分析"></span></span>
                         </div>
                         <input type="number" name="contamination" value="0.1" min="0.01" max="0.5" step="0.01">
                     </div>
                     <div class="param-group">
                         <div class="param-label-wrapper">
                             <label>滚动窗口</label>
-                            <span class="help-icon">?<span class="help-tooltip">计算滚动统计的窗口大小</span></span>
+                            <span class="help-icon">?<span class="help-tooltip" data-tooltip="计算滚动统计特征（均值、标准差）的时间窗口大小。<br>取值范围: 1~50<br>【低】1-3: 捕捉瞬时突变<br>【中】5-10: 平衡灵敏度与稳定性,默认推荐<br>【高】10-50: 过滤短期波动,检测长期趋势偏离"></span></span>
                         </div>
                         <input type="number" name="rolling_window" value="5" min="1" max="50">
                     </div>
                     <div class="param-group">
                         <div class="param-label-wrapper">
                             <label>滞后阶数</label>
-                            <span class="help-icon">?<span class="help-tooltip">创建滞后特征的数量</span></span>
+                            <span class="help-icon">?<span class="help-tooltip" data-tooltip="创建滞后特征的数量，利用历史值作为特征。<br>取值范围: 1~10<br>【低】1-2: 捕捉瞬时异常<br>【中】3-5: 考虑短期历史,默认推荐<br>【高】6-10: 明显自相关性,注意: 阶数过高增加计算复杂度"></span></span>
                         </div>
                         <input type="number" name="n_lags" value="3" min="1" max="10">
                     </div>
                     <div class="param-group checkbox-group">
                         <input type="checkbox" name="use_time_features" id="useTimeFeatures" checked>
-                        <label for="useTimeFeatures" style="margin: 0;">使用时间特征</label>
+                        <label for="useTimeFeatures" style="margin: 0;">
+                            使用时间特征
+                            <span class="help-icon">?<span class="help-tooltip" data-tooltip="是否使用时间特征（小时、星期几）辅助检测。<br>启用后添加 hour 和 day_of_week 特征<br>适用: 工作时间/非工作时间差异明显<br>不适用: 无时间规律的纯数值序列"></span></span>
+                        </label>
                     </div>
                     <div class="param-group checkbox-group">
                         <input type="checkbox" name="use_lag_features" id="useLagFeatures" checked>
-                        <label for="useLagFeatures" style="margin: 0;">使用滞后特征</label>
+                        <label for="useLagFeatures" style="margin: 0;">
+                            使用滞后特征
+                            <span class="help-icon">?<span class="help-tooltip" data-tooltip="是否使用历史值作为特征，检测序列偏离。<br>启用后创建 lag_1, lag_2, ..., lag_n 特征<br>适用: 有自相关性的时间序列<br>不适用: 独立同分布的随机序列"></span></span>
+                        </label>
                     </div>
                 </div>
 
@@ -685,27 +692,30 @@
                     <div class="param-group">
                         <div class="param-label-wrapper">
                             <label>估计器数量</label>
-                            <span class="help-icon">?<span class="help-tooltip">森林中树的数量</span></span>
+                            <span class="help-icon">?<span class="help-tooltip" data-tooltip="孤立森林中树的数量，影响模型稳定性。<br>取值范围: 10~500<br>【低】10-50: 快速检测，适合实时场景<br>【中】100-200: 平衡速度与精度（默认推荐）<br>【高】300-500: 高精度，适合离线分析"></span></span>
                         </div>
                         <input type="number" name="n_estimators" value="100" min="10" max="500">
                     </div>
                     <div class="param-group">
                         <div class="param-label-wrapper">
                             <label>最大样本数</label>
-                            <span class="help-icon">?<span class="help-tooltip">每棵树训练的样本数</span></span>
+                            <span class="help-icon">?<span class="help-tooltip" data-tooltip="每棵树训练时使用的样本数量。<br>取值范围: 10~1000或auto<br>【auto】自动设为min(256,n_samples)<br>【低】10-100: 捕捉局部异常<br>【中】200-300: 平衡局部与全局（默认推荐256）<br>【高】400-1000: 捕捉全局异常"></span></span>
                         </div>
                         <input type="number" name="max_samples" value="256" min="10" max="1000">
                     </div>
                     <div class="param-group">
                         <div class="param-label-wrapper">
                             <label>最大特征数</label>
-                            <span class="help-icon">?<span class="help-tooltip">每棵树的最大特征比例</span></span>
+                            <span class="help-icon">?<span class="help-tooltip" data-tooltip="每棵树分裂时考虑的特征比例。<br>取值范围: 0.1~1.0<br>【低】0.3-0.6: 降低相关性，增加多样性<br>【高】1.0: 使用所有特征（默认推荐）"></span></span>
                         </div>
                         <input type="number" name="max_features" value="1.0" min="0.1" max="1.0" step="0.1">
                     </div>
                     <div class="param-group checkbox-group">
                         <input type="checkbox" name="bootstrap" id="iforestBootstrap">
-                        <label for="iforestBootstrap" style="margin: 0;">Bootstrap 采样</label>
+                        <label for="iforestBootstrap" style="margin: 0;">
+                            Bootstrap 采样
+                            <span class="help-icon">?<span class="help-tooltip" data-tooltip="是否对每棵树使用有放回的Bootstrap采样。启用后每棵树使用不同的训练子集，可增加模型多样性，减少过拟合"></span></span>
+                        </label>
                     </div>
                 </div>
 
@@ -713,14 +723,14 @@
                     <div class="param-group">
                         <div class="param-label-wrapper">
                             <label>邻居数量</label>
-                            <span class="help-icon">?<span class="help-tooltip">计算局部密度时使用的邻居数</span></span>
+                            <span class="help-icon">?<span class="help-tooltip" data-tooltip="计算局部离群因子时使用的邻居数量。<br>取值范围: 1~100<br>【低】5-15: 小邻域，检测局部异常点<br>【中】20-40: 适中邻域（默认推荐20）<br>【高】50-100: 大邻域，检测全局异常"></span></span>
                         </div>
                         <input type="number" name="n_neighbors" value="20" min="1" max="100">
                     </div>
                     <div class="param-group">
                         <div class="param-label-wrapper">
                             <label>算法类型</label>
-                            <span class="help-icon">?<span class="help-tooltip">邻居搜索算法</span></span>
+                            <span class="help-icon">?<span class="help-tooltip" data-tooltip="最近邻搜索算法，影响计算效率。<br>auto-根据数据自动选择<br>ball_tree-适合高维数据<br>kd_tree-适合低维数据（&lt;20维）<br>brute-精确但较慢"></span></span>
                         </div>
                         <select name="algorithm_type">
                             <option value="auto" selected>自动</option>
@@ -732,7 +742,7 @@
                     <div class="param-group">
                         <div class="param-label-wrapper">
                             <label>叶子大小</label>
-                            <span class="help-icon">?<span class="help-tooltip">树算法的叶子大小</span></span>
+                            <span class="help-icon">?<span class="help-tooltip" data-tooltip="树算法的叶子节点大小，影响构建速度和查询效率。<br>取值范围: 1~100<br>【低】1-10: 查询快，构建慢<br>【中】30: 通常是个好的折中值（默认推荐）<br>【高】50-100: 构建快，查询略慢"></span></span>
                         </div>
                         <input type="number" name="leaf_size" value="30" min="1" max="100">
                     </div>
@@ -742,7 +752,7 @@
                     <div class="param-group">
                         <div class="param-label-wrapper">
                             <label>核函数</label>
-                            <span class="help-icon">?<span class="help-tooltip">SVM核函数类型</span></span>
+                            <span class="help-icon">?<span class="help-tooltip" data-tooltip="SVM使用的核函数类型，影响决策边界形状。<br>rbf-通用选择，适合非线性数据（默认推荐）<br>linear-适合线性可分数据，速度快<br>poly-适合特定非线性模式<br>sigmoid-类似神经网络"></span></span>
                         </div>
                         <select name="kernel">
                             <option value="rbf" selected>RBF</option>
@@ -754,21 +764,21 @@
                     <div class="param-group">
                         <div class="param-label-wrapper">
                             <label>多项式阶数</label>
-                            <span class="help-icon">?<span class="help-tooltip">多项式核的阶数</span></span>
+                            <span class="help-icon">?<span class="help-tooltip" data-tooltip="多项式核的阶数，仅当kernel=poly时有效。<br>取值范围: 1~10<br>【低】2-3: 低阶，适合简单非线性模式<br>【中】4-6: 中等复杂度（默认推荐3）<br>【高】7-10: 高阶，可能过拟合"></span></span>
                         </div>
                         <input type="number" name="degree" value="3" min="1" max="10">
                     </div>
                     <div class="param-group">
                         <div class="param-label-wrapper">
                             <label>Gamma</label>
-                            <span class="help-icon">?<span class="help-tooltip">核系数，'scale'或'float'</span></span>
+                            <span class="help-icon">?<span class="help-tooltip" data-tooltip="RBF、poly、sigmoid核的系数，控制单个训练样本的影响范围。<br>取值范围: scale/auto/正数<br>scale-1/(n_features*X.var())（默认推荐）<br>auto-1/n_features<br>小值-影响范围大，决策边界平滑<br>大值-影响范围小，决策边界复杂"></span></span>
                         </div>
                         <input type="text" name="gamma" value="scale">
                     </div>
                     <div class="param-group">
                         <div class="param-label-wrapper">
                             <label>Nu</label>
-                            <span class="help-icon">?<span class="help-tooltip">异常值上界，训练误差分数</span></span>
+                            <span class="help-icon">?<span class="help-tooltip" data-tooltip="异常值比例上界，训练误差分数下界。<br>取值范围: 0.01~1.0<br>【低】0.01-0.1: 极低异常容忍，严格边界<br>【中】0.3-0.5: 适中容忍（默认推荐0.5）<br>【高】0.5-1.0: 高容忍，更宽松的边界"></span></span>
                         </div>
                         <input type="number" name="nu" value="0.5" min="0.01" max="1" step="0.01">
                     </div>
@@ -778,14 +788,14 @@
                     <div class="param-group">
                         <div class="param-label-wrapper">
                             <label>邻居数量</label>
-                            <span class="help-icon">?<span class="help-tooltip">计算距离时使用的邻居数</span></span>
+                            <span class="help-icon">?<span class="help-tooltip" data-tooltip="用于计算异常分数的最近邻数量。<br>取值范围: 1~50<br>【低】1-3: 非常敏感，检测微小异常<br>【中】5-10: 适中敏感度（默认推荐5）<br>【高】20-50: 较保守，仅检测明显异常"></span></span>
                         </div>
                         <input type="number" name="n_neighbors" value="5" min="1" max="50">
                     </div>
                     <div class="param-group">
                         <div class="param-label-wrapper">
                             <label>方法</label>
-                            <span class="help-icon">?<span class="help-tooltip">异常分数计算方法</span></span>
+                            <span class="help-icon">?<span class="help-tooltip" data-tooltip="异常分数的计算方法。<br>largest-使用到第k个邻居的距离（最敏感）<br>mean-使用k个邻居的平均距离（平滑）<br>median-使用k个邻居的中位数距离（抗噪）"></span></span>
                         </div>
                         <select name="knn_method">
                             <option value="largest" selected>最大</option>
@@ -796,14 +806,14 @@
                     <div class="param-group">
                         <div class="param-label-wrapper">
                             <label>半径</label>
-                            <span class="help-icon">?<span class="help-tooltip">邻域半径</span></span>
+                            <span class="help-icon">?<span class="help-tooltip" data-tooltip="邻域搜索半径，用于某些距离计算方法。<br>取值范围: 0.1~10（需根据数据尺度调整）<br>【低】0.1-0.5: 只考虑非常近的点，检测局部异常<br>【中】0.5-2.0: 适中邻域（默认推荐1.0）<br>【高】2.0-10: 考虑更远的邻域，检测全局异常"></span></span>
                         </div>
                         <input type="number" name="radius" value="1.0" min="0.1" max="10" step="0.1">
                     </div>
                     <div class="param-group">
                         <div class="param-label-wrapper">
                             <label>算法类型</label>
-                            <span class="help-icon">?<span class="help-tooltip">邻居搜索算法</span></span>
+                            <span class="help-icon">?<span class="help-tooltip" data-tooltip="最近邻搜索算法，影响计算效率。<br>auto-根据数据自动选择<br>ball_tree-适合高维数据<br>kd_tree-适合低维数据<br>brute-精确但较慢"></span></span>
                         </div>
                         <select name="algorithm_type">
                             <option value="auto" selected>自动</option>
@@ -818,14 +828,14 @@
                     <div class="param-group">
                         <div class="param-label-wrapper">
                             <label>邻居数量</label>
-                            <span class="help-icon">?<span class="help-tooltip">计算角度时使用的邻居数</span></span>
+                            <span class="help-icon">?<span class="help-tooltip" data-tooltip="计算角度时考虑的邻居数量。ABOD通过角度方差检测异常。<br>取值范围: 5~50<br>【低】5-15: 局部角度异常检测<br>【中】15-30: 适中范围（默认推荐10）<br>【高】30-50: 全局角度模式检测"></span></span>
                         </div>
                         <input type="number" name="abod_neighbors" value="10" min="5" max="50">
                     </div>
                     <div class="param-group">
                         <div class="param-label-wrapper">
                             <label>方法</label>
-                            <span class="help-icon">?<span class="help-tooltip">计算方法</span></span>
+                            <span class="help-icon">?<span class="help-tooltip" data-tooltip="ABOD的计算方法，影响速度与精度权衡。<br>fast-近似计算，速度快（默认推荐）<br>default-精确计算，速度慢"></span></span>
                         </div>
                         <select name="abod_method">
                             <option value="fast" selected>快速</option>
@@ -838,27 +848,30 @@
                     <div class="param-group">
                         <div class="param-label-wrapper">
                             <label>聚类数量</label>
-                            <span class="help-icon">?<span class="help-tooltip">聚类算法的簇数量</span></span>
+                            <span class="help-icon">?<span class="help-tooltip" data-tooltip="聚类算法生成的簇数量。CBLOF基于聚类结果检测异常。<br>取值范围: 2~50<br>【低】2-7: 粗粒度聚类<br>【中】8-15: 适中粒度（默认推荐8）<br>【高】16-50: 细粒度聚类"></span></span>
                         </div>
                         <input type="number" name="n_clusters" value="8" min="2" max="50">
                     </div>
                     <div class="param-group">
                         <div class="param-label-wrapper">
                             <label>Alpha</label>
-                            <span class="help-icon">?<span class="help-tooltip">簇大小系数</span></span>
+                            <span class="help-icon">?<span class="help-tooltip" data-tooltip="用于判断大簇和小簇的系数，控制簇大小比例阈值。<br>取值范围: 0.0~1.0<br>【低】0.5-0.8: 宽松的"大簇"定义<br>【高】0.9-1.0: 严格的"大簇"定义（默认推荐0.9）"></span></span>
                         </div>
                         <input type="number" name="alpha" value="0.9" min="0" max="1" step="0.05">
                     </div>
                     <div class="param-group">
                         <div class="param-label-wrapper">
                             <label>Beta</label>
-                            <span class="help-icon">?<span class="help-tooltip">簇大小系数</span></span>
+                            <span class="help-icon">?<span class="help-tooltip" data-tooltip="簇大小判断的系数，与alpha共同定义簇大小阈值。<br>取值范围: 1~100<br>【低】1-5: 严格的"大簇"定义<br>【中】5-20: 适中阈值（默认推荐10）<br>【高】20-100: 宽松的"大簇"定义"></span></span>
                         </div>
                         <input type="number" name="beta" value="10" min="1" max="100">
                     </div>
                     <div class="param-group checkbox-group">
                         <input type="checkbox" name="use_weights" id="cblofWeights">
-                        <label for="cblofWeights" style="margin: 0;">使用权重</label>
+                        <label for="cblofWeights" style="margin: 0;">
+                            使用权重
+                            <span class="help-icon">?<span class="help-tooltip" data-tooltip="是否使用簇大小权重来调整异常分数。启用后，大簇与小簇的异常分数权重不同"></span></span>
+                        </label>
                     </div>
                 </div>
 
@@ -866,21 +879,21 @@
                     <div class="param-group">
                         <div class="param-label-wrapper">
                             <label>直方箱数量</label>
-                            <span class="help-icon">?<span class="help-tooltip">直方图的箱数</span></span>
+                            <span class="help-icon">?<span class="help-tooltip" data-tooltip="每个维度直方图的箱数，影响粒度。<br>取值范围: 1~50<br>【低】5-10: 粗粒度，快速计算（默认推荐10）<br>【中】15-30: 中等粒度，平衡速度与精度<br>【高】40-50: 细粒度，更精确但慢"></span></span>
                         </div>
                         <input type="number" name="n_bins" value="10" min="1" max="50">
                     </div>
                     <div class="param-group">
                         <div class="param-label-wrapper">
                             <label>Alpha</label>
-                            <span class="help-icon">?<span class="help-tooltip">正则化系数</span></span>
+                            <span class="help-icon">?<span class="help-tooltip" data-tooltip="防止除零的正则化系数，用于平滑直方图，避免极端值。取值范围: 0.0~1.0"></span></span>
                         </div>
                         <input type="number" name="hbos_alpha" value="0.1" min="0" max="1" step="0.05">
                     </div>
                     <div class="param-group">
                         <div class="param-label-wrapper">
                             <label>容差</label>
-                            <span class="help-icon">?<span class="help-tooltip">直方图边界容差</span></span>
+                            <span class="help-icon">?<span class="help-tooltip" data-tooltip="直方图边界的容差值，用于处理边界点的模糊性。取值范围: 0.0~1.0"></span></span>
                         </div>
                         <input type="number" name="tol" value="0.5" min="0" max="1" step="0.05">
                     </div>
@@ -889,11 +902,17 @@
                 <div id="mcdParams" class="algorithm-specific params-grid">
                     <div class="param-group checkbox-group">
                         <input type="checkbox" name="store_precision" id="mcdPrecision" checked>
-                        <label for="mcdPrecision" style="margin: 0;">存储精度</label>
+                        <label for="mcdPrecision" style="margin: 0;">
+                            存储精度
+                            <span class="help-icon">?<span class="help-tooltip" data-tooltip="是否存储精度矩阵（协方差矩阵的逆）。存储后可用于马氏距离计算，但占用更多内存"></span></span>
+                        </label>
                     </div>
                     <div class="param-group checkbox-group">
                         <input type="checkbox" name="assume_centered" id="mcdCentered">
-                        <label for="mcdCentered" style="margin: 0;">假设中心化</label>
+                        <label for="mcdCentered" style="margin: 0;">
+                            假设中心化
+                            <span class="help-icon">?<span class="help-tooltip" data-tooltip="是否假设数据已中心化（均值为0）。启用后不估计数据中心，加快计算，适用于已标准化的数据"></span></span>
+                        </label>
                     </div>
                 </div>
 
@@ -901,21 +920,21 @@
                     <div class="param-group">
                         <div class="param-label-wrapper">
                             <label>邻居数量</label>
-                            <span class="help-icon">?<span class="help-tooltip">计算子空间时使用的邻居数</span></span>
+                            <span class="help-icon">?<span class="help-tooltip" data-tooltip="计算子空间时使用的邻居数量。SOD在参考邻居的子空间中检测异常。<br>取值范围: 5~100<br>【低】5-15: 局部子空间异常检测<br>【中】15-40: 适中范围（默认推荐20）<br>【高】40-100: 全局子空间异常检测"></span></span>
                         </div>
                         <input type="number" name="n_neighbors" value="20" min="5" max="100">
                     </div>
                     <div class="param-group">
                         <div class="param-label-wrapper">
                             <label>参考集大小</label>
-                            <span class="help-icon">?<span class="help-tooltip">参考集的大小</span></span>
+                            <span class="help-icon">?<span class="help-tooltip" data-tooltip="用于构建参考子空间的邻居子集大小。<br>取值范围: 5~50（通常设为n_neighbors的一半）<br>【低】5-10: 小参考集，子空间构建快但粗糙<br>【中】10-20: 适中参考集（默认推荐10）<br>【高】20-50: 大参考集，子空间构建慢但精细"></span></span>
                         </div>
                         <input type="number" name="ref_set" value="10" min="5" max="50">
                     </div>
                     <div class="param-group">
                         <div class="param-label-wrapper">
                             <label>Alpha</label>
-                            <span class="help-icon">?<span class="help-tooltip">相似度阈值</span></span>
+                            <span class="help-icon">?<span class="help-tooltip" data-tooltip="相似度阈值，控制子空间中点的归属。<br>取值范围: 0.0~1.0<br>【低】0.5-0.7: 宽松的子空间归属<br>【中】0.8-0.9: 适中阈值（默认推荐0.8）<br>【高】0.95-1.0: 严格的子空间归属"></span></span>
                         </div>
                         <input type="number" name="sod_alpha" value="0.8" min="0" max="1" step="0.05">
                     </div>
@@ -1687,6 +1706,14 @@
                 errorDiv.style.display = 'none';
             }, 5000);
         }
+
+        // 初始化 tooltip - 从 data-tooltip 属性加载 HTML 内容
+        document.addEventListener('DOMContentLoaded', function() {
+            const tooltips = document.querySelectorAll('.help-tooltip[data-tooltip]');
+            tooltips.forEach(tooltip => {
+                tooltip.innerHTML = tooltip.getAttribute('data-tooltip');
+            });
+        });
     </script>
 </body>
 </html>
