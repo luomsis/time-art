@@ -217,6 +217,14 @@ def _run_prediction(time_series, counter, endpoint):
             'forecast_periods': int(request.form.get('forecast_periods', 30)),
             'add_monthly_seasonality': request.form.get('add_monthly_seasonality') == 'true',
             'enforce_non_negative': request.form.get('enforce_non_negative', 'true') == 'true',
+            # 数据清洗参数
+            'clean_handle_missing': request.form.get('clean_handle_missing', 'interpolate'),
+            'clean_handle_inf': request.form.get('clean_handle_inf', 'true') == 'true',
+            'clean_smooth_outliers': request.form.get('clean_smooth_outliers', 'none'),
+            'clean_outlier_threshold': float(request.form.get('clean_outlier_threshold', 1.5)),
+            'clean_filter_zero': request.form.get('clean_filter_zero', 'false') == 'true',
+            'clean_min_data_points': int(request.form.get('clean_min_data_points', 2)),
+            'clean_min_time_span': int(request.form.get('clean_min_time_span', 0)),
         }
 
         logger.debug(f"Prophet 参数: {params}")
@@ -277,6 +285,14 @@ def _run_detection(time_series, counter, endpoint):
             'use_lag_features': request.form.get('use_lag_features', 'true') == 'true',
             'n_lags': int(request.form.get('n_lags', 3)),
             'rolling_window': int(request.form.get('rolling_window', 5)),
+            # 数据清洗参数
+            'clean_handle_missing': request.form.get('clean_handle_missing', 'interpolate'),
+            'clean_handle_inf': request.form.get('clean_handle_inf', 'true') == 'true',
+            'clean_smooth_outliers': request.form.get('clean_smooth_outliers', 'none'),
+            'clean_outlier_threshold': float(request.form.get('clean_outlier_threshold', 1.5)),
+            'clean_filter_zero': request.form.get('clean_filter_zero', 'false') == 'true',
+            'clean_min_data_points': int(request.form.get('clean_min_data_points', 2)),
+            'clean_min_time_span': int(request.form.get('clean_min_time_span', 0)),
         }
 
         logger.debug(f"检测参数: algorithm={params['algorithm']}, "

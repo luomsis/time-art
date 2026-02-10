@@ -31,18 +31,19 @@ pip install -r requirements.txt
 
 1. **Time Series Prediction** ([`app/utils/predictor.py`](app/utils/predictor.py)) - Uses Facebook Prophet for forecasting
 2. **Anomaly Detection** ([`app/utils/detector.py`](app/utils/detector.py)) - Uses PyOD with 9 different algorithms
+3. **Data Cleaning** ([`app/utils/data_cleaner.py`](app/utils/data_cleaner.py)) - Preprocessing pipeline for time series data quality
 
 ### Request Flow
 
 ```
-Flask (main.py) → Validates JSON → Routes to predictor or detector module → Returns chart_data + Base64 image + metrics
+Flask (main.py) → Validates JSON → Data Cleaning → Routes to predictor or detector module → Returns chart_data + Base64 image + metrics
 ```
 
 - **Input**: JSON file upload with format `{ "units": "", "series": [{ "counter": "", "endpoint": "", "data": [[timestamp_ms, value], ...] }] }`
 - **Output**: JSON response with:
   - `chart_data`: Raw data for interactive ECharts visualization
   - `image`: Base64-encoded PNG (fallback/static view)
-  - `metrics`: Analysis metrics
+  - `metrics`: Analysis metrics (includes `cleaning_report` when data cleaning is enabled)
   - `anomalies`: Detected anomalies list (for detection)
 
 ### Key Components
@@ -52,7 +53,8 @@ Flask (main.py) → Validates JSON → Routes to predictor or detector module �
 | [`main.py`](main.py) | Flask routes, file upload handling, parameter validation |
 | [`app/utils/predictor.py`](app/utils/predictor.py) | `ProphetPredictor` class - forecasting with configurable growth/seasonality |
 | [`app/utils/detector.py`](app/utils/detector.py) | `AnomalyDetector` class - 9 PyOD algorithms with feature engineering |
-| [`templates/index.html`](templates/index.html) | Single-page web UI with ECharts interactive charts |
+| [`app/utils/data_cleaner.py`](app/utils/data_cleaner.py) | `DataCleaner` class - data preprocessing and quality validation |
+| [`templates/index.html`](templates/index.html) | Single-page web UI with data preview, cleaning config, and ECharts interactive charts |
 | [`static/echarts.min.js`](static/echarts.min.js) | ECharts library (local, 1.1MB) |
 
 ### Architecture Patterns
@@ -72,6 +74,10 @@ Each has algorithm-specific parameters handled in `main.py:_run_detection()`.
 ### Interactive Chart Features
 
 The web UI supports interactive visualization using ECharts:
+
+1. **Raw Data Preview**: Chart displays immediately after file upload for data inspection
+2. **Data Cleaning Config**: Toggle and configure cleaning parameters before analysis
+3. **View Toggle**: Switch between interactive chart and static image
 
 1. **View Toggle**: Switch between interactive chart and static image
 2. **Zoom & Pan**: Mouse wheel zoom, drag to pan (via ECharts dataZoom)
@@ -108,6 +114,37 @@ The web UI supports interactive visualization using ECharts:
 ### Chinese Localization
 
 The UI is in Chinese. Matplotlib fonts are configured with fallback priority:
+
+### Data Cleaning Features
+
+The [`DataCleaner`](app/utils/data_cleaner.py) class provides comprehensive data preprocessing:
+
+**Cleaning Options:**
+- **Missing Values**: `interpolate` (linear), `ffill`, `bfill`, `mean`, `delete`
+- **Infinite Values**: Convert `inf/-inf` to `NaN` for processing
+- **Outlier Smoothing**: `iqr` (IQR method), `sigma3` (3-sigma rule), `none`
+- **Zero Filtering**: Remove zero values when they represent missing data
+- **Data Validation**: Minimum data points and time span requirements
+
+**Cleaning Report:**
+Returned in `metrics.cleaning_report` with:
+- `initial_count`: Original data point count
+- `deleted_duplicates`: Removed duplicate timestamps
+- `deleted_missing`: Deleted missing values
+- `interpolated_values`: Filled via interpolation/mean
+- `deleted_inf`: Handled infinite values
+- `deleted_zero`: Filtered zero values
+- `smoothed_outliers`: Smoothed extreme values
+- `final_count`: Remaining data points
+- `retention_rate`: Percentage of data retained
+
+**Web UI Features:**
+- Raw data preview chart before analysis
+- Toggle to enable/disable cleaning
+- Configurable parameters with tooltips
+- Real-time data quality info display
+
+### Chinese Localization
 1. macOS: Arial Unicode MS, PingFang SC, STHeiti
 2. Windows: SimHei, Microsoft YaHei
 3. Linux/CentOS: WenQuanYi Zen Hei, Noto Sans CJK SC

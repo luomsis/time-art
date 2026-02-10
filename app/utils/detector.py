@@ -44,6 +44,8 @@ from pyod.models.hbos import HBOS
 from pyod.models.mcd import MCD
 from pyod.models.sod import SOD
 
+from app.utils.data_cleaner import DataCleaner
+
 
 class AnomalyDetector:
     """基于 PyOD 的异常检测器。
@@ -80,6 +82,7 @@ class AnomalyDetector:
                 - use_lag_features: 是否使用滞后特征
                 - rolling_window: 滚动窗口大小
                 - n_lags: 滞后阶数
+                - 数据清洗参数 (clean_*)
         """
         self.params = params
         self.model = None
@@ -87,6 +90,7 @@ class AnomalyDetector:
         self.predictions = None
         self.anomalies = None
         self.decision_scores = None
+        self.cleaning_report = {}
 
     def prepare_data(self, data: List[List[float]]) -> pd.DataFrame:
         """
@@ -98,9 +102,30 @@ class AnomalyDetector:
         Returns:
             DataFrame with prepared features
         """
-        df = pd.DataFrame(data, columns=['timestamp', 'value'])
-        df['datetime'] = pd.to_datetime(df['timestamp'], unit='ms')
-        df = df.sort_values('datetime').drop_duplicates(subset=['datetime'])
+        # 数据清洗
+        clean_params = {
+            'handle_missing': self.params.get('clean_handle_missing', 'interpolate'),
+            'handle_inf': self.params.get('clean_handle_inf', True),
+            'smooth_outliers': self.params.get('clean_smooth_outliers', 'none'),
+            'outlier_threshold': self.params.get('clean_outlier_threshold', 1.5),
+            'filter_zero': self.params.get('clean_filter_zero', False),
+            'min_data_points': self.params.get('clean_min_data_points', 2),
+            'min_time_span_seconds': self.params.get('clean_min_time_span', 0),
+        }
+
+        cleaner = DataCleaner(clean_params)
+        df_cleaned = cleaner.clean(data)
+
+        # 保存清洗报告
+        self.cleaning_report = cleaner.get_report()
+
+        # 重命名列以匹配后续处理
+        # 将毫秒时间戳从datetime转换回来
+        df = pd.DataFrame({
+            'timestamp': df_cleaned['ds'].astype(np.int64) // 10**6,  # 转换为毫秒
+            'value': df_cleaned['y'].values
+        })
+        df['datetime'] = df_cleaned['ds'].values
         df = df.reset_index(drop=True)
 
         # Create additional features for better detection
@@ -400,6 +425,10 @@ class AnomalyDetector:
             'anomaly_percentage': round((n_anomalies / n_total * 100) if n_total > 0 else 0, 2),
             'contamination': self.params.get('contamination', 0.1),
         }
+
+        # 添加清洗报告
+        if self.cleaning_report:
+            metrics['cleaning_report'] = self.cleaning_report
 
         # Add threshold if available
         if self.decision_scores is not None:

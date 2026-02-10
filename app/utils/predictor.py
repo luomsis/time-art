@@ -32,6 +32,8 @@ import numpy as np
 from prophet import Prophet
 from matplotlib.dates import DateFormatter
 
+from app.utils.data_cleaner import DataCleaner
+
 
 class ProphetPredictor:
     """基于 Prophet 的时间序列预测器。
@@ -53,11 +55,13 @@ class ProphetPredictor:
                 - seasonality_prior_scale: 季节性强度
                 - interval_width: 置信区间宽度
                 - daily/weekly/yearly_seasonality: 季节性开关
+                - 数据清洗参数 (clean_*)
         """
         self.params = params
         self.model = None
         self.df = None
         self.forecast = None
+        self.cleaning_report = {}
 
     def prepare_data(self, data: List[List[float]]) -> pd.DataFrame:
         """准备 Prophet 模型所需的数据格式。
@@ -68,10 +72,22 @@ class ProphetPredictor:
         Returns:
             DataFrame with 'ds' and 'y' columns (and 'cap' for logistic growth)
         """
-        df = pd.DataFrame(data, columns=['ds', 'y'])
-        df['ds'] = pd.to_datetime(df['ds'], unit='ms')
-        df = df.sort_values('ds').drop_duplicates(subset=['ds'])
-        df = df.reset_index(drop=True)
+        # 数据清洗
+        clean_params = {
+            'handle_missing': self.params.get('clean_handle_missing', 'interpolate'),
+            'handle_inf': self.params.get('clean_handle_inf', True),
+            'smooth_outliers': self.params.get('clean_smooth_outliers', 'none'),
+            'outlier_threshold': self.params.get('clean_outlier_threshold', 1.5),
+            'filter_zero': self.params.get('clean_filter_zero', False),
+            'min_data_points': self.params.get('clean_min_data_points', 2),
+            'min_time_span_seconds': self.params.get('clean_min_time_span', 0),
+        }
+
+        cleaner = DataCleaner(clean_params)
+        df = cleaner.clean(data)
+
+        # 保存清洗报告
+        self.cleaning_report = cleaner.get_report()
 
         # 预处理：对于非负指标（CPU、内存等），将负值设为0
         if self.params.get('enforce_non_negative', False):
@@ -333,6 +349,10 @@ class ProphetPredictor:
             'forecast_start': self.df['ds'].max().strftime('%Y-%m-%d %H:%M:%S'),
             'forecast_end': self.forecast['ds'].max().strftime('%Y-%m-%d %H:%M:%S'),
         }
+
+        # 添加清洗报告
+        if self.cleaning_report:
+            metrics['cleaning_report'] = self.cleaning_report
 
         if len(forecast_hist) > 0 and 'y_actual' in forecast_hist.columns:
             y_true = forecast_hist['y_actual'].values

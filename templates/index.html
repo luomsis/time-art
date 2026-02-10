@@ -98,6 +98,89 @@
             display: block;
         }
 
+        /* 原始数据预览区域 */
+        .data-preview-section {
+            display: none;
+            margin-bottom: 30px;
+        }
+
+        .data-preview-section.show {
+            display: block;
+        }
+
+        /* 数据清洗配置区域 */
+        .cleaning-config-section {
+            display: none;
+            margin-bottom: 30px;
+        }
+
+        .cleaning-config-section.show {
+            display: block;
+        }
+
+        .section-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #e0e0e0;
+        }
+
+        .cleaning-toggle {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 20px;
+            padding: 15px;
+            background: #f8f9ff;
+            border-radius: 10px;
+        }
+
+        .toggle-switch {
+            position: relative;
+            width: 60px;
+            height: 30px;
+        }
+
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .toggle-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: 0.3s;
+            border-radius: 30px;
+        }
+
+        .toggle-slider:before {
+            position: absolute;
+            content: "";
+            height: 22px;
+            width: 22px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: 0.3s;
+            border-radius: 50%;
+        }
+
+        .toggle-switch input:checked + .toggle-slider {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .toggle-switch input:checked + .toggle-slider:before {
+            transform: translateX(30px);
+        }
+
         .type-selector {
             display: flex;
             gap: 20px;
@@ -373,6 +456,13 @@
             box-shadow: 0 5px 15px rgba(0,0,0,0.1);
         }
 
+        #rawDataChart {
+            width: 100%;
+            height: 500px;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
         .time-filter-controls {
             display: flex;
             gap: 15px;
@@ -498,6 +588,90 @@
                 </button>
                 <input type="file" id="fileInput" accept=".json">
                 <div class="file-info" id="fileInfo"></div>
+            </div>
+
+            <!-- 原始数据预览 -->
+            <div class="data-preview-section" id="dataPreviewSection">
+                <h2 class="section-title">📊 原始数据预览</h2>
+                <div class="chart-container">
+                    <div id="rawDataChart"></div>
+                </div>
+                <div style="margin-top: 15px; padding: 15px; background: #f8f9ff; border-radius: 10px;">
+                    <strong>数据信息:</strong> <span id="dataInfo">-</span>
+                </div>
+            </div>
+
+            <!-- 数据清洗配置 -->
+            <div class="cleaning-config-section" id="cleaningConfigSection">
+                <h2 class="section-title">🧹 数据清洗配置</h2>
+                <div class="cleaning-toggle">
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="enableCleaning" checked>
+                        <span class="toggle-slider"></span>
+                    </label>
+                    <span style="font-weight: 600; color: #333;">启用数据清洗</span>
+                </div>
+                <div class="params-grid" id="cleaningParamsGrid">
+                    <div class="param-group">
+                        <div class="param-label-wrapper">
+                            <label>缺失值处理</label>
+                            <span class="help-icon">?<span class="help-tooltip" data-tooltip="处理缺失数据的方法。<br>interpolate-线性插值填充（推荐）<br>ffill-前向填充<br>bfill-后向填充<br>mean-均值填充<br>delete-删除缺失值"></span></span>
+                        </div>
+                        <select name="clean_handle_missing" id="cleanHandleMissing">
+                            <option value="interpolate" selected>线性插值</option>
+                            <option value="ffill">前向填充</option>
+                            <option value="bfill">后向填充</option>
+                            <option value="mean">均值填充</option>
+                            <option value="delete">删除</option>
+                        </select>
+                    </div>
+                    <div class="param-group checkbox-group">
+                        <input type="checkbox" name="clean_handle_inf" id="cleanHandleInf" checked>
+                        <label for="cleanHandleInf" style="margin: 0;">
+                            处理无穷值
+                            <span class="help-icon">?<span class="help-tooltip" data-tooltip="是否将无穷值(inf/-inf)转换为NaN后再处理"></span></span>
+                        </label>
+                    </div>
+                    <div class="param-group">
+                        <div class="param-label-wrapper">
+                            <label>异常值平滑</label>
+                            <span class="help-icon">?<span class="help-tooltip" data-tooltip="对极端异常值进行平滑处理。<br>none-不处理<br>iqr-IQR方法（四分位距）<br>sigma3-3σ原则（标准差）"></span></span>
+                        </div>
+                        <select name="clean_smooth_outliers" id="cleanSmoothOutliers">
+                            <option value="none" selected>不处理</option>
+                            <option value="iqr">IQR方法</option>
+                            <option value="sigma3">3σ原则</option>
+                        </select>
+                    </div>
+                    <div class="param-group">
+                        <div class="param-label-wrapper">
+                            <label>异常值阈值倍数</label>
+                            <span class="help-icon">?<span class="help-tooltip" data-tooltip="异常值检测的阈值倍数。<br>IQR方法: 默认1.5，可选1.5~3.0<br>3σ方法: 默认3，可选2~4"></span></span>
+                        </div>
+                        <input type="number" name="clean_outlier_threshold" id="cleanOutlierThreshold" value="1.5" min="1" max="4" step="0.1">
+                    </div>
+                    <div class="param-group checkbox-group">
+                        <input type="checkbox" name="clean_filter_zero" id="cleanFilterZero">
+                        <label for="cleanFilterZero" style="margin: 0;">
+                            过滤零值
+                            <span class="help-icon">?<span class="help-tooltip" data-tooltip="是否过滤掉值为0的数据点（适用于零值表示数据缺失的场景）"></span></span>
+                        </label>
+                    </div>
+                    <div class="param-group">
+                        <div class="param-label-wrapper">
+                            <label>最小数据点数</label>
+                            <span class="help-icon">?<span class="help-tooltip" data-tooltip="清洗后最少保留的数据点数量，低于此值将报错。默认2"></span></span>
+                        </div>
+                        <input type="number" name="clean_min_data_points" id="cleanMinDataPoints" value="2" min="2" max="1000">
+                    </div>
+                    <div class="param-group">
+                        <div class="param-label-wrapper">
+                            <label>最小时间跨度(秒)</label>
+                            <span class="help-icon">?<span class="help-tooltip" data-tooltip="数据最小时间跨度要求（秒），低于此值将报错。默认0表示不限制"></span></span>
+                        </div>
+                        <input type="number" name="clean_min_time_span" id="cleanMinTimeSpan" value="0" min="0" max="86400">
+                    </div>
+                </div>
             </div>
 
             <!-- 分析类型选择 -->
@@ -992,9 +1166,11 @@
         let selectedFile = null;
         let selectedType = null;
         let chartInstance = null;
+        let rawDataChart = null;  // 原始数据图表实例
         let currentChartData = null;
         let currentAnalysisType = null;
         let echartsAvailable = typeof echarts !== 'undefined';
+        let rawTimeSeriesData = null;  // 存储原始时间序列数据
 
         // 文件输入处理
         document.getElementById('fileInput').addEventListener('change', function(e) {
@@ -1003,7 +1179,7 @@
                 selectedFile = file;
                 document.getElementById('fileInfo').textContent = `已选择: ${file.name}`;
                 document.getElementById('fileInfo').classList.add('show');
-                updateAnalyzeButton();
+                loadAndPreviewData(file);
             }
         });
 
@@ -1024,9 +1200,143 @@
                 selectedFile = file;
                 document.getElementById('fileInfo').textContent = `已选择: ${file.name}`;
                 document.getElementById('fileInfo').classList.add('show');
-                updateAnalyzeButton();
+                loadAndPreviewData(file);
             }
         });
+
+        // 加载并预览数据
+        async function loadAndPreviewData(file) {
+            try {
+                const content = await file.text();
+                const data = JSON.parse(content);
+
+                if (!data.series || !data.series[0] || !data.series[0].data) {
+                    alert('JSON 格式错误：缺少 series 或 data 字段');
+                    return;
+                }
+
+                const seriesData = data.series[0];
+                rawTimeSeriesData = seriesData.data.filter(
+                    point => point !== null && point.length === 2 && point[0] !== null && point[1] !== null
+                );
+
+                // 显示数据信息
+                const dataInfo = `指标: ${seriesData.counter || 'N/A'} | 端点: ${seriesData.endpoint || 'N/A'} | 数据点: ${rawTimeSeriesData.length}`;
+                document.getElementById('dataInfo').textContent = dataInfo;
+
+                // 显示原始数据图表
+                renderRawDataChart(rawTimeSeriesData, seriesData.counter, seriesData.endpoint);
+
+                // 显示数据清洗配置区域
+                document.getElementById('cleaningConfigSection').classList.add('show');
+
+                // 隐藏之前的结果区域
+                document.getElementById('resultsSection').classList.remove('show');
+
+                // 启用分析按钮
+                updateAnalyzeButton();
+
+            } catch (error) {
+                alert('文件解析错误: ' + error.message);
+            }
+        }
+
+        // 渲染原始数据图表
+        function renderRawDataChart(data, counter, endpoint) {
+            if (!echartsAvailable) {
+                alert('ECharts 库未加载');
+                return;
+            }
+
+            const chartDom = document.getElementById('rawDataChart');
+            if (rawDataChart) {
+                rawDataChart.dispose();
+            }
+
+            // 先显示预览区域，确保 ECharts 可以正确计算尺寸
+            document.getElementById('dataPreviewSection').classList.add('show');
+
+            // 使用 setTimeout 确保浏览器渲染完成后再初始化图表
+            setTimeout(() => {
+                rawDataChart = echarts.init(chartDom);
+
+                const option = {
+                    title: {
+                        text: `${endpoint || ''} - ${counter || ''}`,
+                        left: 'center',
+                        textStyle: { fontSize: 16, fontWeight: 'bold' }
+                    },
+                    tooltip: {
+                        trigger: 'axis',
+                        formatter: function(params) {
+                            if (!params || params.length === 0) return '';
+                            const date = new Date(params[0].value[0]);
+                            const dateStr = date.toLocaleString();
+                            return `${dateStr}<br/>数值: <strong>${params[0].value[1].toFixed(4)}</strong>`;
+                        }
+                    },
+                    grid: {
+                        left: '3%',
+                        right: '4%',
+                        bottom: '15%',
+                        top: 60,
+                        containLabel: true
+                    },
+                    dataZoom: [
+                        {
+                            type: 'inside',
+                            start: 0,
+                            end: 100,
+                            minSpan: 1,
+                            maxSpan: 100
+                        },
+                        {
+                            type: 'slider',
+                            start: 0,
+                            end: 100,
+                            height: 25,
+                            bottom: 30
+                        }
+                    ],
+                    xAxis: {
+                        type: 'time',
+                        axisLabel: {
+                            formatter: '{MM}-{dd}\n{HH}:{mm}',
+                            fontSize: 11
+                        }
+                    },
+                    yAxis: {
+                        type: 'value',
+                        name: '数值',
+                        axisLabel: { fontSize: 11 }
+                    },
+                    series: [{
+                        name: '原始数据',
+                        type: 'line',
+                        data: data,
+                        itemStyle: { color: '#0EA5E9' },
+                        lineStyle: { width: 1.5 },
+                        showSymbol: false,
+                        emphasis: { disabled: true }
+                    }]
+                };
+
+                rawDataChart.setOption(option);
+                // 强制调整大小确保图表填充整个容器
+                rawDataChart.resize();
+            }, 10);
+
+            // 响应窗口大小变化
+            window.removeEventListener('resize', handleRawDataChartResize);
+            window.addEventListener('resize', handleRawDataChartResize);
+        }
+
+        // 单独的 resize 处理函数，避免重复添加监听器
+        function handleRawDataChartResize() {
+            if (rawDataChart) {
+                rawDataChart.resize();
+            }
+        }
 
         function selectType(type) {
             selectedType = type;
@@ -1039,12 +1349,11 @@
             } else {
                 document.getElementById('detectionParams').classList.add('show');
             }
-            updateAnalyzeButton();
         }
 
         function updateAnalyzeButton() {
             const btn = document.getElementById('analyzeBtn');
-            btn.disabled = !(selectedFile && selectedType);
+            btn.disabled = !selectedFile;
         }
 
         function updateAlgorithmParams() {
@@ -1057,7 +1366,10 @@
         }
 
         async function analyze() {
-            if (!selectedFile || !selectedType) return;
+            if (!selectedFile) return;
+
+            // 如果没有选择分析类型，默认使用预测
+            const analysisType = selectedType || 'prediction';
 
             const loading = document.getElementById('loading');
             const resultsSection = document.getElementById('resultsSection');
@@ -1070,21 +1382,44 @@
             try {
                 const formData = new FormData();
                 formData.append('file', selectedFile);
-                formData.append('analysis_type', selectedType);
+                formData.append('analysis_type', analysisType);
 
-                // 收集所有表单参数
-                const paramsSection = selectedType === 'prediction' ?
+                // 收集数据清洗参数
+                const enableCleaning = document.getElementById('enableCleaning').checked;
+                if (enableCleaning) {
+                    formData.append('clean_handle_missing', document.getElementById('cleanHandleMissing').value);
+                    formData.append('clean_handle_inf', document.getElementById('cleanHandleInf').checked);
+                    formData.append('clean_smooth_outliers', document.getElementById('cleanSmoothOutliers').value);
+                    formData.append('clean_outlier_threshold', document.getElementById('cleanOutlierThreshold').value);
+                    formData.append('clean_filter_zero', document.getElementById('cleanFilterZero').checked);
+                    formData.append('clean_min_data_points', document.getElementById('cleanMinDataPoints').value);
+                    formData.append('clean_min_time_span', document.getElementById('cleanMinTimeSpan').value);
+                } else {
+                    // 如果未启用清洗，设置默认值（不处理）
+                    formData.append('clean_handle_missing', 'delete');
+                    formData.append('clean_handle_inf', false);
+                    formData.append('clean_smooth_outliers', 'none');
+                    formData.append('clean_outlier_threshold', 1.5);
+                    formData.append('clean_filter_zero', false);
+                    formData.append('clean_min_data_points', 2);
+                    formData.append('clean_min_time_span', 0);
+                }
+
+                // 收集算法参数
+                const paramsSection = analysisType === 'prediction' ?
                     document.getElementById('predictionParams') :
                     document.getElementById('detectionParams');
 
-                const inputs = paramsSection.querySelectorAll('input, select');
-                inputs.forEach(input => {
-                    if (input.type === 'checkbox') {
-                        formData.append(input.name, input.checked);
-                    } else {
-                        formData.append(input.name, input.value);
-                    }
-                });
+                if (paramsSection) {
+                    const inputs = paramsSection.querySelectorAll('input, select');
+                    inputs.forEach(input => {
+                        if (input.type === 'checkbox') {
+                            formData.append(input.name, input.checked);
+                        } else {
+                            formData.append(input.name, input.value);
+                        }
+                    });
+                }
 
                 const response = await fetch('/analyze', {
                     method: 'POST',
@@ -1124,6 +1459,7 @@
             'anomaly_percentage': '异常占比 (%)',
             'contamination': '异常比例',
             'threshold': '阈值',
+            'cleaning_report': '清洗报告',
             'min_anomaly_value': '最小异常值',
             'max_anomaly_value': '最大异常值',
             'mean_anomaly_value': '平均异常值',
@@ -1171,6 +1507,9 @@
             // 显示指标
             metricsGrid.innerHTML = '';
             for (const [key, value] of Object.entries(result.metrics)) {
+                // 跳过清洗报告对象（单独处理）
+                if (key === 'cleaning_report') continue;
+
                 const metricCard = document.createElement('div');
                 metricCard.className = 'metric-card';
                 // 先尝试原始key，再尝试小写key，最后尝试带空格的key
@@ -1183,6 +1522,32 @@
                     <div class="value">${value}</div>
                 `;
                 metricsGrid.appendChild(metricCard);
+            }
+
+            // 显示清洗报告（如果存在）
+            if (result.metrics.cleaning_report) {
+                const cr = result.metrics.cleaning_report;
+                const cleaningCard = document.createElement('div');
+                cleaningCard.className = 'metric-card';
+                cleaningCard.style.gridColumn = '1 / -1'; // 跨越所有列
+
+                let summaryParts = [];
+                if (cr.deleted_duplicates > 0) summaryParts.push(`删除重复: ${cr.deleted_duplicates}`);
+                if (cr.deleted_missing > 0) summaryParts.push(`删除缺失: ${cr.deleted_missing}`);
+                if (cr.interpolated_values > 0) summaryParts.push(`插值填充: ${cr.interpolated_values}`);
+                if (cr.deleted_inf > 0) summaryParts.push(`处理无穷值: ${cr.deleted_inf}`);
+                if (cr.deleted_zero > 0) summaryParts.push(`过滤零值: ${cr.deleted_zero}`);
+                if (cr.smoothed_outliers > 0) summaryParts.push(`平滑异常值: ${cr.smoothed_outliers}`);
+
+                const summaryText = summaryParts.length > 0
+                    ? summaryParts.join(' | ') + ` | 保留率: ${cr.retention_rate}%`
+                    : '无需处理';
+
+                cleaningCard.innerHTML = `
+                    <div class="label">数据清洗</div>
+                    <div class="value" style="font-size: 14px;">${summaryText}</div>
+                `;
+                metricsGrid.appendChild(cleaningCard);
             }
 
             // 显示异常详情（如果是异常检测）
