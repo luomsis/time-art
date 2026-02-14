@@ -678,18 +678,37 @@
             <div class="type-selector">
                 <div class="type-option" data-type="prediction" onclick="selectType('prediction')">
                     <h3>📈 预测</h3>
-                    <p>使用 Prophet 预测未来值</p>
+                    <p>预测未来值</p>
                 </div>
                 <div class="type-option" data-type="detection" onclick="selectType('detection')">
                     <h3>🔍 异常检测</h3>
-                    <p>使用 PyOD 检测异常值</p>
+                    <p>检测异常值</p>
                 </div>
             </div>
 
             <!-- 预测参数 -->
             <div class="params-section" id="predictionParams">
-                <h2 style="margin-bottom: 20px; color: #333;">Prophet 预测参数</h2>
-                <div class="params-grid">
+                <!-- 模型选择器 -->
+                <div style="margin-bottom: 25px;">
+                    <h2 style="margin-bottom: 15px; color: #333;">选择预测模型</h2>
+                    <div style="display: flex; gap: 15px;">
+                        <label style="display: flex; align-items: center; gap: 8px; padding: 12px 20px; background: #f8f9ff; border-radius: 10px; border: 2px solid #e0e0e0; cursor: pointer; transition: all 0.2s;" id="prophetModelLabel">
+                            <input type="radio" name="prediction_model" value="prophet" checked onchange="selectPredictionModel('prophet')">
+                            <span style="font-weight: 600;">Prophet</span>
+                            <span style="font-size: 12px; color: #666;">Facebook 时间序列预测</span>
+                        </label>
+                        <label style="display: flex; align-items: center; gap: 8px; padding: 12px 20px; background: #f8f9ff; border-radius: 10px; border: 2px solid #e0e0e0; cursor: pointer; transition: all 0.2s;" id="sarimaModelLabel">
+                            <input type="radio" name="prediction_model" value="sarima" onchange="selectPredictionModel('sarima')">
+                            <span style="font-weight: 600;">SARIMA</span>
+                            <span style="font-size: 12px; color: #666;">季节性 ARIMA 模型</span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Prophet 参数 -->
+                <div id="prophetParams">
+                    <h2 style="margin-bottom: 20px; color: #333;">Prophet 预测参数</h2>
+                    <div class="params-grid">
                     <div class="param-group">
                         <div class="param-label-wrapper">
                             <label>增长类型</label>
@@ -799,6 +818,110 @@
                             强制非负值
                             <span class="help-icon">?<span class="help-tooltip" data-tooltip="强制预测值和非负，适用于不可能为负的指标。<br>适用: CPU、内存、请求数、销售等<br>作用: 负预测值截断为0"></span></span>
                         </label>
+                    </div>
+                </div>
+                </div>
+
+                <!-- SARIMA 参数 -->
+                <div id="sarimaParams" style="display: none;">
+                    <h2 style="margin-bottom: 20px; color: #333;">SARIMA 预测参数</h2>
+                    <div class="params-grid">
+                        <div class="param-group">
+                            <div class="param-label-wrapper">
+                                <label>AR 阶数 (p)</label>
+                                <span class="help-icon">?<span class="help-tooltip" data-tooltip="自回归(AR)阶数，表示使用多少个历史值来预测当前值。<br>取值范围: 0~5<br>【低】0-1: 弱自相关性<br>【中】2-3: 适中自相关（推荐）<br>【高】4-5: 强自相关，注意过拟合"></span></span>
+                            </div>
+                            <input type="number" name="sarima_p" value="2" min="0" max="5">
+                        </div>
+                        <div class="param-group">
+                            <div class="param-label-wrapper">
+                                <label>差分阶数 (d)</label>
+                                <span class="help-icon">?<span class="help-tooltip" data-tooltip="差分阶数，使序列平稳化的次数。<br>取值范围: 0~2<br>0: 序列已平稳，无需差分<br>1: 一阶差分，消除线性趋势（推荐）<br>2: 二阶差分，消除二次趋势"></span></span>
+                            </div>
+                            <input type="number" name="sarima_d" value="1" min="0" max="2">
+                        </div>
+                        <div class="param-group">
+                            <div class="param-label-wrapper">
+                                <label>MA 阶数 (q)</label>
+                                <span class="help-icon">?<span class="help-tooltip" data-tooltip="移动平均(MA)阶数，表示使用多少个历史误差来预测当前值。<br>取值范围: 0~5<br>【低】0-1: 弱误差相关性<br>【中】2-3: 适中误差相关（推荐）<br>【高】4-5: 强误差相关，注意过拟合"></span></span>
+                            </div>
+                            <input type="number" name="sarima_q" value="2" min="0" max="5">
+                        </div>
+                        <div class="param-group">
+                            <div class="param-label-wrapper">
+                                <label>季节性 AR 阶数 (P)</label>
+                                <span class="help-icon">?<span class="help-tooltip" data-tooltip="季节性自回归阶数，处理季节周期的自相关。<br>取值范围: 0~3<br>0: 无季节性自相关<br>1-2: 适中季节性自相关（推荐）<br>3: 强季节性自相关"></span></span>
+                            </div>
+                            <input type="number" name="sarima_P" value="1" min="0" max="3">
+                        </div>
+                        <div class="param-group">
+                            <div class="param-label-wrapper">
+                                <label>季节性差分 (D)</label>
+                                <span class="help-icon">?<span class="help-tooltip" data-tooltip="季节性差分阶数，消除季节性趋势。<br>取值范围: 0~2<br>0: 无季节性趋势<br>1: 一阶季节差分（推荐）<br>2: 二阶季节差分"></span></span>
+                            </div>
+                            <input type="number" name="sarima_D" value="1" min="0" max="2">
+                        </div>
+                        <div class="param-group">
+                            <div class="param-label-wrapper">
+                                <label>季节性 MA 阶数 (Q)</label>
+                                <span class="help-icon">?<span class="help-tooltip" data-tooltip="季节性移动平均阶数，处理季节周期的误差相关。<br>取值范围: 0~3<br>0: 无季节性误差相关<br>1-2: 适中季节性误差相关（推荐）<br>3: 强季节性误差相关"></span></span>
+                            </div>
+                            <input type="number" name="sarima_Q" value="2" min="0" max="3">
+                        </div>
+                        <div class="param-group">
+                            <div class="param-label-wrapper">
+                                <label>季节性周期</label>
+                                <span class="help-icon">?<span class="help-tooltip" data-tooltip="季节性周期的长度（以5分钟为单位）。<br>none-无季节性<br>hourly-每小时（12个点）<br>daily-每天（288个点）<br>weekly-每周（2016个点）"></span></span>
+                            </div>
+                            <select name="sarima_s">
+                                <option value="none">无季节性</option>
+                                <option value="hourly">每小时</option>
+                                <option value="daily" selected>每天</option>
+                                <option value="weekly">每周</option>
+                            </select>
+                        </div>
+                        <div class="param-group">
+                            <div class="param-label-wrapper">
+                                <label>预测周期数</label>
+                                <span class="help-icon">?<span class="help-tooltip" data-tooltip="指定要预测的未来时间点数量。<br>取值范围: 1~1000<br>【低】1-50: 短期预测<br>【中】50-200: 中期预测<br>【高】200-1000: 长期预测"></span></span>
+                            </div>
+                            <input type="number" name="forecast_periods" value="100" min="1" max="1000">
+                        </div>
+                        <div class="param-group">
+                            <div class="param-label-wrapper">
+                                <label>置信水平</label>
+                                <span class="help-icon">?<span class="help-tooltip" data-tooltip="预测区间的置信水平。<br>取值范围: 0.7~0.99<br>0.70: 70% 置信区间<br>0.80: 80% 置信区间（推荐）<br>0.95: 95% 置信区间</span></span>
+                            </div>
+                            <input type="number" name="confidence_level" value="0.8" min="0.7" max="0.99" step="0.05">
+                        </div>
+                        <div class="param-group checkbox-group">
+                            <input type="checkbox" name="auto_order" id="sarimaAutoOrder">
+                            <label for="sarimaAutoOrder" style="margin: 0;">
+                                自动选择参数
+                                <span class="help-icon">?<span class="help-tooltip" data-tooltip="自动选择 ARIMA 阶数 (p,d,q)，使用 ADF 检验和 ACF/PACF 分析。<br>启用后手动设置的 p,d,q 参数将被忽略"></span></span>
+                            </label>
+                        </div>
+                        <div class="param-group checkbox-group">
+                            <input type="checkbox" name="enforce_stationarity" id="sarimaEnforceStationarity" checked>
+                            <label for="sarimaEnforceStationarity" style="margin: 0;">
+                                强制平稳性
+                                <span class="help-icon">?<span class="help-tooltip" data-tooltip="强制模型参数使序列平稳。启用后可加快拟合速度并提高数值稳定性"></span></span>
+                            </label>
+                        </div>
+                        <div class="param-group checkbox-group">
+                            <input type="checkbox" name="enforce_invertibility" id="sarimaEnforceInvertibility" checked>
+                            <label for="sarimaEnforceInvertibility" style="margin: 0;">
+                                强制可逆性
+                                <span class="help-icon">?<span class="help-tooltip" data-tooltip="强制 MA 参数使模型可逆。启用后可加快拟合速度并提高数值稳定性"></span></span>
+                            </label>
+                        </div>
+                        <div class="param-group checkbox-group">
+                            <input type="checkbox" name="enforce_non_negative" id="sarimaEnforceNonNegative" checked>
+                            <label for="sarimaEnforceNonNegative" style="margin: 0;">
+                                强制非负值
+                                <span class="help-icon">?<span class="help-tooltip" data-tooltip="强制预测值和非负，适用于不可能为负的指标"></span></span>
+                            </label>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -1365,6 +1488,37 @@
             }
         }
 
+        function selectPredictionModel(model) {
+            // 更新模型选择标签样式
+            const prophetLabel = document.getElementById('prophetModelLabel');
+            const sarimaLabel = document.getElementById('sarimaModelLabel');
+
+            if (model === 'prophet') {
+                prophetLabel.style.borderColor = '#667eea';
+                prophetLabel.style.background = 'linear-gradient(135deg, #667eea15 0%, #764ba215 100%)';
+                sarimaLabel.style.borderColor = '#e0e0e0';
+                sarimaLabel.style.background = '#f8f9ff';
+
+                // 显示 Prophet 参数，隐藏 SARIMA 参数
+                document.getElementById('prophetParams').style.display = 'block';
+                document.getElementById('sarimaParams').style.display = 'none';
+            } else {
+                sarimaLabel.style.borderColor = '#667eea';
+                sarimaLabel.style.background = 'linear-gradient(135deg, #667eea15 0%, #764ba215 100%)';
+                prophetLabel.style.borderColor = '#e0e0e0';
+                prophetLabel.style.background = '#f8f9ff';
+
+                // 显示 SARIMA 参数，隐藏 Prophet 参数
+                document.getElementById('prophetParams').style.display = 'none';
+                document.getElementById('sarimaParams').style.display = 'block';
+            }
+        }
+
+        // 初始化模型选择样式
+        document.addEventListener('DOMContentLoaded', function() {
+            selectPredictionModel('prophet');
+        });
+
         async function analyze() {
             if (!selectedFile) return;
 
@@ -1421,6 +1575,14 @@
                     });
                 }
 
+                // 添加预测模型选择（prediction_model radio 在参数区域外面）
+                if (analysisType === 'prediction') {
+                    const selectedModel = document.querySelector('input[name="prediction_model"]:checked');
+                    if (selectedModel) {
+                        formData.append('prediction_model', selectedModel.value);
+                    }
+                }
+
                 const response = await fetch('/analyze', {
                     method: 'POST',
                     body: formData
@@ -1465,6 +1627,12 @@
             'mean_anomaly_value': '平均异常值',
             'counter': '指标名称',
             'endpoint': '端点名称',
+            // SARIMA 特有指标
+            'model': '预测模型',
+            'order': 'ARIMA 阶数 (p,d,q)',
+            'seasonal_order': '季节性阶数 (P,D,Q,s)',
+            'aic': '赤池信息量 (AIC)',
+            'bic': '贝叶斯信息量 (BIC)',
             // spaced format (fallback)
             'forecast periods': '预测周期数',
             'data points': '数据点数',
@@ -1491,7 +1659,12 @@
             currentAnalysisType = result.type;
 
             // 设置类型标签
-            resultsType.textContent = result.type === 'prediction' ? '预测' : '异常检测';
+            let typeLabel = result.type === 'prediction' ? '预测' : '异常检测';
+            if (result.type === 'prediction' && result.model) {
+                const modelName = result.model === 'prophet' ? 'Prophet' : 'SARIMA';
+                typeLabel = `${modelName} 预测`;
+            }
+            resultsType.textContent = typeLabel;
             resultsType.className = 'results-type ' + result.type;
 
             // 渲染交互式图表

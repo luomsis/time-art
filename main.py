@@ -19,6 +19,7 @@ from werkzeug.utils import secure_filename
 
 from app.utils.predictor import ProphetPredictor
 from app.utils.detector import AnomalyDetector
+from app.utils.sarima_predictor import SARIMAPredictor
 
 # 项目根目录
 PROJECT_ROOT = Path(__file__).parent
@@ -189,6 +190,33 @@ def analyze():
 
 
 def _run_prediction(time_series, counter, endpoint):
+    """运行时间序列预测 (Prophet 或 SARIMA)。
+
+    Args:
+        time_series: 时间序列数据 [[timestamp, value], ...]
+        counter: 指标名称
+        endpoint: 端点名称
+
+    Returns:
+        JSON 响应，包含预测结果、图表数据和指标
+    """
+    try:
+        # 获取预测模型类型
+        prediction_model = request.form.get('prediction_model', 'prophet')
+
+        if prediction_model == 'sarima':
+            logger.info(f"开始 SARIMA 预测 - 指标: {counter}, 端点: {endpoint}")
+            return _run_sarima_prediction(time_series, counter, endpoint)
+        else:
+            logger.info(f"开始 Prophet 预测 - 指标: {counter}, 端点: {endpoint}")
+            return _run_prophet_prediction(time_series, counter, endpoint)
+
+    except Exception as e:
+        logger.exception(f"预测错误: {str(e)}")
+        return jsonify({'error': f'Prediction error: {str(e)}'}), 500
+
+
+def _run_prophet_prediction(time_series, counter, endpoint):
     """运行 Prophet 预测。
 
     Args:
@@ -200,8 +228,6 @@ def _run_prediction(time_series, counter, endpoint):
         JSON 响应，包含预测结果、图表数据和指标
     """
     try:
-        logger.info(f"开始 Prophet 预测 - 指标: {counter}, 端点: {endpoint}")
-
         # 获取 Prophet 参数
         params = {
             'growth': request.form.get('growth', 'linear'),
@@ -241,7 +267,7 @@ def _run_prediction(time_series, counter, endpoint):
         predictor = ProphetPredictor(params)
         img_base64, metrics = predictor.run(time_series, counter, endpoint)
 
-        logger.info(f"预测完成 - 数据点: {metrics.get('data_points', 'N/A')}, "
+        logger.info(f"Prophet 预测完成 - 数据点: {metrics.get('data_points', 'N/A')}, "
                    f"预测周期: {metrics.get('forecast_periods', 'N/A')}, "
                    f"MAPE: {metrics.get('mape', 'N/A')}%")
 
@@ -255,12 +281,85 @@ def _run_prediction(time_series, counter, endpoint):
             'counter': counter,
             'endpoint': endpoint,
             'type': 'prediction',
+            'model': 'prophet',
             'chart_data': chart_data
         })
 
     except Exception as e:
-        logger.exception(f"预测错误: {str(e)}")
-        return jsonify({'error': f'Prediction error: {str(e)}'}), 500
+        logger.exception(f"Prophet 预测错误: {str(e)}")
+        raise
+
+
+def _run_sarima_prediction(time_series, counter, endpoint):
+    """运行 SARIMA 预测。
+
+    Args:
+        time_series: 时间序列数据 [[timestamp, value], ...]
+        counter: 指标名称
+        endpoint: 端点名称
+
+    Returns:
+        JSON 响应，包含预测结果、图表数据和指标
+    """
+    try:
+        # 获取 SARIMA 参数
+        params = {
+            # ARIMA 阶数
+            'p': int(request.form.get('sarima_p', 1)),
+            'd': int(request.form.get('sarima_d', 1)),
+            'q': int(request.form.get('sarima_q', 1)),
+            # 季节性阶数
+            'P': int(request.form.get('sarima_P', 1)),
+            'D': int(request.form.get('sarima_D', 1)),
+            'Q': int(request.form.get('sarima_Q', 1)),
+            # 季节性周期
+            'seasonal_period': request.form.get('sarima_s', 'none'),
+            # 预测参数
+            'forecast_periods': int(request.form.get('forecast_periods', 30)),
+            'confidence_level': float(request.form.get('confidence_level', 0.8)),
+            # 模型选项
+            'auto_order': request.form.get('auto_order', 'false') == 'true',
+            'enforce_stationarity': request.form.get('enforce_stationarity', 'true') == 'true',
+            'enforce_invertibility': request.form.get('enforce_invertibility', 'true') == 'true',
+            'enforce_non_negative': request.form.get('enforce_non_negative', 'true') == 'true',
+            # 数据清洗参数
+            'clean_handle_missing': request.form.get('clean_handle_missing', 'interpolate'),
+            'clean_handle_inf': request.form.get('clean_handle_inf', 'true') == 'true',
+            'clean_smooth_outliers': request.form.get('clean_smooth_outliers', 'none'),
+            'clean_outlier_threshold': float(request.form.get('clean_outlier_threshold', 1.5)),
+            'clean_filter_zero': request.form.get('clean_filter_zero', 'false') == 'true',
+            'clean_min_data_points': int(request.form.get('clean_min_data_points', 2)),
+            'clean_min_time_span': int(request.form.get('clean_min_time_span', 0)),
+        }
+
+        logger.debug(f"SARIMA 参数: p={params['p']}, d={params['d']}, q={params['q']}, "
+                   f"P={params['P']}, D={params['D']}, Q={params['Q']}, s={params['seasonal_period']}")
+
+        # 运行预测
+        predictor = SARIMAPredictor(params)
+        img_base64, metrics = predictor.run(time_series, counter, endpoint)
+
+        logger.info(f"SARIMA 预测完成 - 数据点: {metrics.get('data_points', 'N/A')}, "
+                   f"预测周期: {metrics.get('forecast_periods', 'N/A')}, "
+                   f"MAPE: {metrics.get('mape', 'N/A')}%")
+
+        # 获取交互式图表数据
+        chart_data = predictor.get_chart_data(counter, endpoint)
+
+        return jsonify({
+            'success': True,
+            'image': img_base64,
+            'metrics': metrics,
+            'counter': counter,
+            'endpoint': endpoint,
+            'type': 'prediction',
+            'model': 'SARIMA',
+            'chart_data': chart_data
+        })
+
+    except Exception as e:
+        logger.exception(f"SARIMA 预测错误: {str(e)}")
+        raise
 
 
 def _run_detection(time_series, counter, endpoint):
