@@ -62,7 +62,7 @@ EOF
 RUNNER="uv"
 PORT=9999
 DEBUG=""
-RELOAD="--reload"
+RELOAD=""
 
 # 解析参数
 while [[ $# -gt 0 ]]; do
